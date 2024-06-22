@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t; -*-
+
 ;; https://github.com/radian-software/straight.el#getting-started
 ;; see also ./early-init.el
 (defvar bootstrap-version)
