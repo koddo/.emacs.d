@@ -1,5 +1,11 @@
 ;; -*- lexical-binding: t; -*-
 
+(defmacro comment (&rest body)
+  "Comment out one or more s-expressions."
+  nil)
+
+;; =========================================================
+
 ;; https://github.com/radian-software/straight.el#getting-started
 ;; see also ./early-init.el
 (defvar bootstrap-version)
