@@ -15,3 +15,7 @@
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
+
+;; https://github.com/radian-software/straight.el#integration-with-use-package
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)   ; to avoid putting ":straight t" everywhere
