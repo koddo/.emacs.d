@@ -1,0 +1,12 @@
+# For examples see https://github.com/github/gitignore/blob/master/Global/Emacs.gitignore
+
+# Despite the no-littering package there's still a lot of litter.
+# The following ensures only my own files are tracked.
+
+*
+
+!/.gitignore
+!/early-init.el
+!/init.el
+
+!/straight/versions/
