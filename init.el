@@ -21,3 +21,10 @@
 ;; https://github.com/radian-software/straight.el#integration-with-use-package
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)   ; to avoid putting ":straight t" everywhere
+
+;; =========================================================
+
+(use-package no-littering
+  :init   ; by default these are just etc/ and var/
+  (setq no-littering-etc-directory (expand-file-name (convert-standard-filename "no-littering-etc/") user-emacs-directory))
+  (setq no-littering-var-directory (expand-file-name (convert-standard-filename "no-littering-var/") user-emacs-directory)))
