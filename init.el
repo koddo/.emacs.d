@@ -435,6 +435,50 @@
 (advice-add 'handle-shift-selection :around 'ym/advice-handle-shift-selection)
 ;; (advice-remove 'handle-shift-selection 'ym/advice-handle-shift-selection)
 
+(ym-define-key (kbd "s-z") #'undo)
+(ym-define-key (kbd "s-x")
+               (lambda (beg end)
+                 (interactive "r")
+                 (prog1
+                     (kill-region beg end)
+                   (setq deactivate-mark nil))))   ; leave the region highlighted after the cut
+(ym-define-key (kbd "s-c")
+               (lambda (beg end)
+                 (interactive "r")
+                 (prog1
+                     (kill-ring-save beg end)
+                   (setq deactivate-mark nil))))   ; leave the region highlighted after the copy
+
+;;;; Here are two functions:
+;;;; yank-and-indent --- always indents, and this is undesirable, because I'd like to have the original text pasted untouched
+;;;; yank-for-indent --- doesn't indent, but leaves a mark so that it can be activated, e.g., using exchange-point-and-mark and the text indented
+;; (defun yank-and-indent ()
+;;   "Yank and then indent the newly formed region according to mode."
+;;   (interactive)
+;;   (let ((point-before (point)))
+;;     (yank)
+;;     (indent-region point-before (point))
+;;     ))
+(defun yank-for-indent ()
+  "Yank and mark the initial position so that the mark can be activated and the text indented."
+  (interactive)
+  (if mark-active
+      (let* ((beg (save-excursion (if (> (point) (mark)) (exchange-point-and-mark))
+			                      (point)))
+	         (end (save-excursion (if (<= (point) (mark)) (exchange-point-and-mark))
+			                      (point))))
+        (delete-region beg end)
+        ))
+  (let ((point-before (point)))
+    (yank)
+    ;; (set-mark point-before)
+    (push-mark point-before t)
+    ))
+(ym-define-key (kbd "s-v") #'yank-for-indent)
+(ym-define-key (kbd "S-<insert>") #'yank-for-indent)    ; clipboard managers do this
+
+;; =========================================================
+
 (ym-define-key (kbd "s-i") 'previous-line)
 (ym-define-key (kbd "s-k") 'next-line)
 (ym-define-key (kbd "s-j") 'backward-char)
@@ -481,41 +525,6 @@
 (ym-define-key (kbd "s-#") (lambda () (interactive) (ignore-error 'error (split-window-right))))
 (ym-define-key (kbd "s-2") 'tab-bar-history-back)
 (ym-define-key (kbd "s-3") 'tab-bar-history-forward)
-
-(ym-define-key (kbd "s-z") #'undo)
-(ym-define-key (kbd "s-x")
-               (lambda (beg end)
-                 (interactive "r")
-                 (prog1
-                     (kill-region beg end)
-                   (setq deactivate-mark nil))))   ; leave the region highlighted after the cut
-(ym-define-key (kbd "s-c")
-               (lambda (beg end)
-                 (interactive "r")
-                 (prog1
-                     (kill-ring-save beg end)
-                   (setq deactivate-mark nil))))   ; leave the region highlighted after the copy
-
-;;;; Here are two functions:
-;;;; yank-and-indent --- always indents, and this is undesirable, because I'd like to have the original text pasted untouched
-;;;; yank-for-indent --- doesn't indent, but leaves a mark so that it can be activated, e.g., using exchange-point-and-mark and the text indented
-;; (defun yank-and-indent ()
-;;   "Yank and then indent the newly formed region according to mode."
-;;   (interactive)
-;;   (let ((point-before (point)))
-;;     (yank)
-;;     (indent-region point-before (point))
-;;     ))
-(defun yank-for-indent ()
-  "Yank and mark the initial position so that the mark can be activated and the text indented."
-  (interactive)
-  (let ((point-before (point)))
-    (yank)
-    ;; (set-mark point-before)
-    (push-mark point-before t)
-    ))
-(ym-define-key (kbd "s-v") #'yank-for-indent)
-(ym-define-key (kbd "S-<insert>") #'yank-for-indent)    ; clipboard managers do this
 
 ;; =========================================================
 
@@ -817,7 +826,7 @@ there's a region, all lines that region covers will be duplicated."
 (use-package ido
   :config
   (setq
-   ido-use-virtual-buffers t   ; keep a list of closed buffers
+   ido-use-virtual-buffers nil   ; keep a list of closed buffers
    ido-enable-flex-matching t
    ;; ido-use-faces nil   ; turned off for flx
    ido-default-buffer-method 'selected-window    ; do not switch frames if a buffer is opened -- http://ergoemacs.org/misc/emacs_ido_switch_window.html
@@ -842,6 +851,7 @@ there's a region, all lines that region covers will be duplicated."
 	       ido-file-dir-completion-map
 	       ))
   )
+
 (use-package ido-grid-mode
   :config
   ;; (setq ido-grid-mode-start-collapsed t)
@@ -1361,7 +1371,7 @@ Containing LEFT, and RIGHT aligned respectively."
                                    )
                             " "
                             ;; mode-line-buffer-identification
-                            (:eval (when buffer-file-name
+                            (:eval (when buffer-file-name      ; see also the m/prepend-home-dir-to-buffer-name function
                                      (propertize
                                       (file-name-nondirectory buffer-file-name)    ; or "%b", but it can show "init.el\.emacs.d"
                                       'face 'mode-line-buffer-id)))
@@ -1371,10 +1381,10 @@ Containing LEFT, and RIGHT aligned respectively."
                                      "%b"))
                             )
 
-                            ;; Right.
-                            '("   "
-                              mode-line-end-spaces
-                              )))))
+                          ;; Right.
+                          '("   "
+                            mode-line-end-spaces
+                            )))))
         (setq ym-mode-line-toggle-my-short nil)
         (force-mode-line-update))
     (progn
@@ -1833,8 +1843,33 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
+(defun my/prepend-home-dir-to-buffer-name ()
+  (interactive)
+  "Prepend the user's home directory to the current buffer's file name."
+  (let ((original-filename (buffer-file-name))
+        ;; (home-directory (expand-file-name "~/"))
+        (home-directory (abbreviate-file-name (file-name-as-directory (file-name-directory buffer-file-name))))
+        )
+    (when original-filename
+      (rename-buffer
+       (concat (file-name-nondirectory original-filename) " " home-directory )
+       t)
+      ))
+  )
+(add-hook 'find-file-hook #'my/prepend-home-dir-to-buffer-name)
+;; (remove-hook 'find-file-hook #'my/prepend-home-dir-to-buffer-name)
+
+;; =========================================================
+
 (load-file (expand-file-name (convert-standard-filename "init-hydra.el") user-emacs-directory))
 
 ;; =========================================================
+
+
+
+
+
+
+
 
 
