@@ -1331,36 +1331,95 @@ Containing LEFT, and RIGHT aligned respectively."
             (list (format (format "%%%ds" available-width) ""))
             right)))
 
-;; if performance is an issue: https://stackoverflow.com/questions/71261843/how-can-i-hide-all-major-minor-modes-from-the-mode-line-without-a-package
-;; https://emacs.stackexchange.com/questions/59219/how-to-measure-the-performance-of-the-mode-line
-(setq-default
- mode-line-format
- (list
-  (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
-  '(:eval
-    (ym/align-mode-line
-     ;; Left.
-     '("%e" mode-line-front-space mode-line-mule-info mode-line-client mode-line-modified mode-line-remote mode-line-frame-identification mode-line-buffer-identification)
+;; (with-eval-after-load 'subr-x
+;;   (setq-default mode-line-buffer-identification
+;;                 '(:eval (format-mode-line (propertized-buffer-identification (or (when-let* ((buffer-file-truename buffer-file-truename)
+;;                                                                                              (prj (cdr-safe (project-current)))
+;;                                                                                              (prj-parent (file-name-directory (directory-file-name (expand-file-name prj)))))
+;;                                                                                    (concat (file-relative-name (file-name-directory buffer-file-truename) prj-parent) (file-name-nondirectory buffer-file-truename)))
+;;                                                                                  "%b"))))))
 
-     ;; Right.
-     '("   "
-       (:eval (when ym-mode-line-show-line-column-position mode-line-position))         ; or maybe "%l:%c"
-       ;; (vc-mode vc-mode)
-       "  " mode-line-modes mode-line-misc-info mode-line-end-spaces)
-     ))))
+;; My own short mode-line.
+;; For performance reasons mostly, because I use a lot of modes, and regular mode-line becomes a bottleneck, it evaluates a lot of things constantly.
+;; https://www.gnu.org/software/emacs/manual/html_node/elisp/_0025_002dConstructs.html
+(defvar ym-mode-line-toggle-my-short t)
+(defun m/toggle-mode-line-short ()
+  (interactive)
+  (if ym-mode-line-toggle-my-short
+      (progn
+        (setq-default mode-line-format
+                      (list
+                       (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
+                       '(:eval
+                         (ym/align-mode-line
+                          ;; Left.
+                          '(
+                            " "
+                            (:eval (when buffer-read-only "%%")
+                                   (when (buffer-narrowed-p) "n");       = "%n"
+                                   (when (file-remote-p default-directory) "@")   ; = "%@"
+                                   )
+                            " "
+                            ;; mode-line-buffer-identification
+                            (:eval (when buffer-file-name
+                                     (propertize
+                                      (file-name-nondirectory buffer-file-name)    ; or "%b", but it can show "init.el\.emacs.d"
+                                      'face 'mode-line-buffer-id)))
+                            " "
+                            (:eval (if buffer-file-name
+                                       (abbreviate-file-name (file-name-as-directory (file-name-directory buffer-file-name)))
+                                     "%b"))
+                            )
+
+                            ;; Right.
+                            '("   "
+                              mode-line-end-spaces
+                              )))))
+        (setq ym-mode-line-toggle-my-short nil)
+        (force-mode-line-update))
+    (progn
+      (setq-default mode-line-format
+                    (list
+                     (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
+                     '(:eval
+                       (ym/align-mode-line
+                        ;; Left.
+                        '(
+                          "%e"    ; indication of nearly out of memory for Lisp objects
+                          mode-line-front-space
+                          mode-line-mule-info
+                          mode-line-client
+                          mode-line-modified
+                          mode-line-remote
+                          mode-line-frame-identification
+                          mode-line-buffer-identification
+                          )
+
+                        ;; Right.
+                        '("   "
+                          (:eval (when ym-mode-line-show-line-column-position mode-line-position))         ; or maybe "%l:%c"
+                          ;; (vc-mode vc-mode)
+                          "  "
+                          mode-line-modes
+                          mode-line-misc-info
+                          mode-line-end-spaces)
+                        )))))
+    (setq ym-mode-line-toggle-my-short t)
+    (force-mode-line-update)))
+(m/toggle-mode-line-short)
 ;; see also https://stackoverflow.com/questions/6672251/easily-display-useful-information-in-custom-emacs-minor-mode-mode-line-woes
 
 ;; highlight minibuffer prompt, because large monitor
 (set-face-attribute 'minibuffer-prompt nil :background "light green" :foreground "black")
 
-;; usage: M-x goto-line
+;; use this instead: M-x goto-line
 (progn
   ;; We configure what's shown.
   ;; But do not show it unless toggled.
   (line-number-mode 1)
   (column-number-mode 1)
   (size-indication-mode 1)   ; like Top or 70%
-  (defvar ym-mode-line-show-line-column-position nil))
+  (defvar ym-mode-line-show-line-column-position t))
 (defun ym-shortcut/toggle-mode-line-show-line-column-position ()
   (interactive)
   (if ym-mode-line-show-line-column-position
