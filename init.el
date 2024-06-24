@@ -483,7 +483,6 @@
 (ym-define-key (kbd "s-3") 'tab-bar-history-forward)
 
 (ym-define-key (kbd "s-z") #'undo)
-(ym-define-key (kbd "s-Z") #'undo-tree-visualize)
 (ym-define-key (kbd "s-x")
                (lambda (beg end)
                  (interactive "r")
@@ -496,7 +495,27 @@
                  (prog1
                      (kill-ring-save beg end)
                    (setq deactivate-mark nil))))   ; leave the region highlighted after the copy
-(ym-define-key (kbd "s-v") #'yank)
+
+;;;; Here are two functions:
+;;;; yank-and-indent --- always indents, and this is undesirable, because I'd like to have the original text pasted untouched
+;;;; yank-for-indent --- doesn't indent, but leaves a mark so that it can be activated, e.g., using exchange-point-and-mark and the text indented
+;; (defun yank-and-indent ()
+;;   "Yank and then indent the newly formed region according to mode."
+;;   (interactive)
+;;   (let ((point-before (point)))
+;;     (yank)
+;;     (indent-region point-before (point))
+;;     ))
+(defun yank-for-indent ()
+  "Yank and mark the initial position so that the mark can be activated and the text indented."
+  (interactive)
+  (let ((point-before (point)))
+    (yank)
+    ;; (set-mark point-before)
+    (push-mark point-before t)
+    ))
+(ym-define-key (kbd "s-v") #'yank-for-indent)
+(ym-define-key (kbd "S-<insert>") #'yank-for-indent)    ; clipboard managers do this
 
 ;; =========================================================
 
@@ -984,6 +1003,12 @@ there's a region, all lines that region covers will be duplicated."
 ;; see also https://github.com/DamienCassou/json-navigator
 ;; tried json-mode, but jsons-print-path doesn't work
 
+;; =========================================================
+
+(setq undo-limit (* 100 1024)) ; 100KB
+(setq undo-strong-limit (* 150 1024)) ; 150KB
+(setq undo-outer-limit (* 50 1024 1024)) ; 50MB
+
 ;; I used to use undo-tree, but completely replaces the undo system, it's memory hungry and slow.
 (use-package vundo)    ; https://github.com/casouri/vundo
 
@@ -1339,10 +1364,9 @@ Containing LEFT, and RIGHT aligned respectively."
 (defun ym-shortcut/toggle-mode-line-show-line-column-position ()
   (interactive)
   (if ym-mode-line-show-line-column-position
-      (progn (setq ym-mode-line-show-line-column-position nil)
-             (force-mode-line-update))
-    (progn (setq ym-mode-line-show-line-column-position t)
-           (force-mode-line-update))))
+      (setq ym-mode-line-show-line-column-position nil)
+    (setq ym-mode-line-show-line-column-position t))
+  (force-mode-line-update))
 
 ;; =========================================================
 
@@ -1753,4 +1777,5 @@ Containing LEFT, and RIGHT aligned respectively."
 (load-file (expand-file-name (convert-standard-filename "init-hydra.el") user-emacs-directory))
 
 ;; =========================================================
+
 
