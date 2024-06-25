@@ -1362,7 +1362,7 @@ Containing LEFT, and RIGHT aligned respectively."
                        (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
                        '(:eval
                          (ym/align-mode-line
-                          ;; Left.
+                          ;;;; ----- Left.
                           '(
                             " "
                             (:eval (when buffer-read-only "%%")
@@ -1370,23 +1370,25 @@ Containing LEFT, and RIGHT aligned respectively."
                                    (when (file-remote-p default-directory) "@")   ; = "%@"
                                    )
                             " "
-                            ;; mode-line-buffer-identification
-                            (:eval (when buffer-file-name      ; see also the m/prepend-home-dir-to-buffer-name function
-                                     (propertize
-                                      (file-name-nondirectory buffer-file-name)    ; or "%b", but it can show "init.el\.emacs.d"
-                                      'face 'mode-line-buffer-id)))
-                            " "
-                            (:eval (if buffer-file-name
-                                       (abbreviate-file-name (file-name-as-directory (file-name-directory buffer-file-name)))
-                                     "%b"))
-                            )
 
-                          ;; Right.
+                            ;; ;; mode-line-buffer-identification
+                            ;; (:eval (when buffer-file-name      ; see also the m/prepend-home-dir-to-buffer-name function
+                            ;; (propertize
+                            ;;  (file-name-nondirectory buffer-file-name)    ; or "%b", but it can show "init.el\.emacs.d"
+                            ;;  'face 'mode-line-buffer-id)))
+                            ;; " "
+                            ;; (:eval (if buffer-file-name
+                            ;;            (abbreviate-file-name (file-name-as-directory (file-name-directory buffer-file-name)))
+                            ;;          "%b"))
+
+                            ;; "%b"   ; instead of the commented block above
+                            (:eval (propertize "%b" 'face 'mode-line-buffer-id))
+                            )
+                          ;;;; ----- Right.
                           '("   "
                             mode-line-end-spaces
                             )))))
-        (setq ym-mode-line-toggle-my-short nil)
-        (force-mode-line-update))
+        (setq ym-mode-line-toggle-my-short nil))
     (progn
       (setq-default mode-line-format
                     (list
@@ -1414,8 +1416,8 @@ Containing LEFT, and RIGHT aligned respectively."
                           mode-line-misc-info
                           mode-line-end-spaces)
                         )))))
-    (setq ym-mode-line-toggle-my-short t)
-    (force-mode-line-update)))
+    (setq ym-mode-line-toggle-my-short t))
+  (force-mode-line-update t))
 (m/toggle-mode-line-short)
 ;; see also https://stackoverflow.com/questions/6672251/easily-display-useful-information-in-custom-emacs-minor-mode-mode-line-woes
 
@@ -1861,9 +1863,29 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
+(defun jue-clone-buffer ()    ; from https://emacs.stackexchange.com/questions/33156/how-can-i-have-multiple-help-buffers-with-different-content
+  "jue clone current buffer. Useful to have multiple help buffers."
+  (interactive)
+  (rename-buffer (generate-new-buffer-name
+                  (concat (buffer-name) " -- "                 ; create name from old name and
+                          (save-excursion                   ; use first word in buffer for new name
+                            (goto-char 0)
+                            (thing-at-point 'symbol t))))
+                 t))                                      ; show cloned buffer now
+(defun m/rename-help-buffer-when-it-is-populated ()    ; for some reason cloning directly in the hook doesn't work, we have to wait
+  (interactive)
+  (run-at-time "10 millisecond" nil #'jue-clone-buffer))
+(add-hook 'help-mode-hook #'m/rename-help-buffer-when-it-is-populated)
+;; (remove-hook 'help-mode-hook #'m/rename-help-buffer-when-it-is-populated)
+
+;; maybe write the same thing for occur, grep, rg, etc
+
+;; =========================================================
+
 (load-file (expand-file-name (convert-standard-filename "init-hydra.el") user-emacs-directory))
 
 ;; =========================================================
+
 
 
 
