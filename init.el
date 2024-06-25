@@ -686,9 +686,11 @@ there's a region, all lines that region covers will be duplicated."
 (defvar my/scroll-command---virtual-cur-line nil)
 (defvar my/scroll-command---n-lines-from-top nil)
 (defvar my/scroll-command---column-before-scrolling nil)
+(defvar my/scroll-command---point-before-scrolling nil)
 (make-variable-buffer-local 'my/scroll-command---virtual-cur-line)
 (make-variable-buffer-local 'my/scroll-command---n-lines-from-top)
 (make-variable-buffer-local 'my/scroll-command---column-before-scrolling)
+(make-variable-buffer-local 'my/scroll-command---point-before-scrolling)
 
 (defun my/scroll-command (n-lines)
   (interactive)
@@ -717,10 +719,45 @@ there's a region, all lines that region covers will be duplicated."
 (ym-define-key (kbd "s-m") #'my/scroll-down-command)        ; page up
 (ym-define-key (kbd "s-n") #'my/scroll-up-command)          ; page down
 
+
+
+
+(defun my/scroll-command-2 (n-lines)
+  (interactive)
+  (unless
+      (or (eq last-command #'my/scroll-down-command-2)
+          (eq last-command #'my/scroll-up-command-2))
+    (setq my/scroll-command---virtual-cur-line
+          (line-number-at-pos (point)))
+    (setq my/scroll-command---n-lines-from-top
+          (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start))))
+    (setq my/scroll-command---column-before-scrolling (current-column))
+    (setq my/scroll-command---point-before-scrolling (point))
+    )
+  (let* ((cur-line my/scroll-command---virtual-cur-line)
+         (next-screen-line (+ cur-line n-lines)))
+    (unless (or (< next-screen-line (line-number-at-pos (beginning-of-buffer)))
+                (> next-screen-line (line-number-at-pos (end-of-buffer))))
+      (goto-line next-screen-line)
+      (recenter my/scroll-command---n-lines-from-top)
+      (setq my/scroll-command---virtual-cur-line next-screen-line)
+      (move-to-column my/scroll-command---column-before-scrolling)))
+  (when (and (or (eq last-command #'my/scroll-down-command-2)
+                 (eq last-command #'my/scroll-up-command-2))
+             (> my/scroll-command---point-before-scrolling (window-start))
+             (< my/scroll-command---point-before-scrolling (window-end))
+             )
+    (goto-char my/scroll-command---point-before-scrolling)
+    (message "hell")
+    )
+  )
+(defun my/scroll-down-command-2 () (interactive) (my/scroll-command-2 (- (/ (window-body-height) 5))))
+(defun my/scroll-up-command-2 () (interactive) (my/scroll-command-2 (+ (/ (window-body-height) 5))))
+
 ;; (ym-define-key (kbd "s-,") (lambda () (interactive "^") (scroll-up-command (/ (window-body-height) 5))))     ; the built-in scroll command is fine for this
 ;; (ym-define-key (kbd "s-.") (lambda () (interactive "^") (scroll-down-command (/ (window-body-height) 5))))    ; used to be just 3, independently of window-body-height
-(ym-define-key (kbd "s-,") (lambda () (interactive "^") (my/scroll-command (+ (/ (window-body-height) 5)))))     ; the built-in scroll command is fine for this
-(ym-define-key (kbd "s-.") (lambda () (interactive "^") (my/scroll-command (- (/ (window-body-height) 5)))))    ; used to be just 3, independently of window-body-height
+(ym-define-key (kbd "s-,") #'my/scroll-up-command-2)     ; the built-in scroll command is fine for this
+(ym-define-key (kbd "s-.") #'my/scroll-down-command-2)    ; used to be just 3, independently of window-body-height
 
 ;;;; https://www.reddit.com/r/emacs/comments/wx7ytn/emacs_29_native_smooth_scrolling/
 ;; (setq pixel-scroll-precision-large-scroll-height nil)
