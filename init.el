@@ -209,7 +209,7 @@
 ;; =========================================================
 
 (recentf-mode 1)
-(setq recentf-max-saved-items 50)   ; default: 20
+(setq recentf-max-saved-items 100)   ; default: 20
 
 (save-place-mode 1)
 ;; save-place-forget-unreadable-files is t by default, this make quitting emacs slow
@@ -826,9 +826,9 @@ there's a region, all lines that region covers will be duplicated."
 (use-package ido
   :config
   (setq
-   ido-use-virtual-buffers nil   ; keep a list of closed buffers
+   ido-use-virtual-buffers t   ; keep a list of closed buffers
    ido-enable-flex-matching t
-   ;; ido-use-faces nil   ; turned off for flx
+   ido-use-faces t
    ido-default-buffer-method 'selected-window    ; do not switch frames if a buffer is opened -- http://ergoemacs.org/misc/emacs_ido_switch_window.html
    ido-auto-merge-work-directories-length -1     ; disable search for a file in other recent used directories -- https://stackoverflow.com/questions/17986194/emacs-disable-automatic-file-search-in-ido-mode
    )
@@ -852,10 +852,22 @@ there's a region, all lines that region covers will be duplicated."
 	       ))
   )
 
-(use-package ido-grid-mode
-  :config
-  ;; (setq ido-grid-mode-start-collapsed t)
-  )
+;; ido virtual buffers now look like "[recentf] init.el ~/.emacs.d/"
+;; they look the same in my short mode-line, see its configuration
+(defun ido-virtual-buffers-names-advice (orig-func &rest args)
+  (let ((orig-file-name-nondirectory (symbol-function 'file-name-nondirectory)))
+   (cl-letf (((symbol-function 'file-name-nondirectory)
+              (lambda (path)
+                (concat "[recentf] "
+                        (funcall orig-file-name-nondirectory path)
+                        " "
+                        (abbreviate-file-name (file-name-as-directory (file-name-directory path)))
+                        ))
+             ))
+    (apply orig-func args)
+    )))
+(advice-add 'ido-add-virtual-buffers-to-list :around #'ido-virtual-buffers-names-advice)
+;; (advice-remove 'ido-add-virtual-buffers-to-list #'ido-virtual-buffers-names-advice)
 
 ;; C-h f, while Amx is active, runs describe-function on the currently selected command.
 ;; M-. jumps to the definition of the selected command.
@@ -1889,6 +1901,31 @@ Containing LEFT, and RIGHT aligned respectively."
 
 
 
+
+
+
+
+
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(dired-omit-extensions 'nil nil nil "Customized by me")
+ '(dired-omit-files (rx (or (seq bol "." eol) (seq bol "." (not (any "."))))) nil nil "Customized by me"))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ido-virtual ((t (:foreground "black"))))
+ '(rainbow-delimiters-depth-1-face ((t (:foreground "firebrick3"))))
+ '(rainbow-delimiters-depth-2-face ((t (:foreground "dodger blue"))))
+ '(rainbow-delimiters-depth-3-face ((t (:foreground "green3"))))
+ '(rainbow-delimiters-depth-4-face ((t (:foreground "peru"))))
+ '(rainbow-delimiters-depth-5-face ((t (:foreground "grey50"))))
+ '(rainbow-delimiters-depth-6-face ((t (:foreground "black")))))
 
 
 
