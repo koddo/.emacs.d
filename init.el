@@ -719,8 +719,26 @@ there's a region, all lines that region covers will be duplicated."
 (ym-define-key (kbd "s-m") #'my/scroll-down-command)        ; page up
 (ym-define-key (kbd "s-n") #'my/scroll-up-command)          ; page down
 
-(ym-define-key (kbd "s-,") (lambda () (interactive "^") (scroll-up-command 3)))     ; the built-in scroll command is fine for this
-(ym-define-key (kbd "s-.") (lambda () (interactive "^") (scroll-down-command 3)))
+;; (ym-define-key (kbd "s-,") (lambda () (interactive "^") (scroll-up-command (/ (window-body-height) 5))))     ; the built-in scroll command is fine for this
+;; (ym-define-key (kbd "s-.") (lambda () (interactive "^") (scroll-down-command (/ (window-body-height) 5))))    ; used to be just 3, independently of window-body-height
+(ym-define-key (kbd "s-,") (lambda () (interactive "^") (my/scroll-command (+ (/ (window-body-height) 5)))))     ; the built-in scroll command is fine for this
+(ym-define-key (kbd "s-.") (lambda () (interactive "^") (my/scroll-command (- (/ (window-body-height) 5)))))    ; used to be just 3, independently of window-body-height
+
+;;;; https://www.reddit.com/r/emacs/comments/wx7ytn/emacs_29_native_smooth_scrolling/
+;; (setq pixel-scroll-precision-large-scroll-height nil)
+;; (setq pixel-scroll-precision-interpolation-factor 2.0)
+;; (defun joe/smooth-scroll-half-page-down ()
+;;   "Smooth scroll down"
+;;   (interactive)
+;;   (let ((half-height (/ (window-height) 3)))
+;;     (pixel-scroll-precision-interpolate (* 5 (- half-height)))))
+;; (defun joe/smooth-scroll-half-page-up ()
+;;   "Smooth scroll down"
+;;   (interactive)
+;;   (let ((half-height (/ (window-height) 3)))
+;;     (pixel-scroll-precision-interpolate (* 5 half-height))))
+;; (ym-define-key (kbd "s-,") #'joe/smooth-scroll-half-page-down)     ; the built-in scroll command is fine for this
+;; (ym-define-key (kbd "s-.") #'joe/smooth-scroll-half-page-up)
 
 ;; =========================================================
 
@@ -1150,6 +1168,36 @@ there's a region, all lines that region covers will be duplicated."
 
 ;; =========================================================
 
+;; (require 'org-protocol)
+
+;; ;; Copylet
+;; javascript:(function() {
+;;     var title = document.title;
+;;     var url = location.href;
+;;     var selectedText = window.getSelection().toString();
+;;     var tmpTextArea = document.createElement('textarea');
+;;     tmpTextArea.value = 'title: ' + title + '\nurl: ' + url + '\n';
+;;     document.body.appendChild(tmpTextArea);
+;;     tmpTextArea.select();
+;;     document.execCommand('copy');
+;;     document.body.removeChild(tmpTextArea);
+;;     })();
+
+;; ;; Copylet with quote
+;; javascript:(function() {
+;;     var title = document.title;
+;;     var url = location.href;
+;;     var selectedText = window.getSelection().toString();
+;;     var tmpTextArea = document.createElement('textarea');
+;;     tmpTextArea.value = 'title: ' + title + '\nurl: ' + url + '\n#+begin_quote\n' + selectedText + '\n#+end_quote\n';
+;;     document.body.appendChild(tmpTextArea);
+;;     tmpTextArea.select();
+;;     document.execCommand('copy');
+;;     document.body.removeChild(tmpTextArea);
+;;     })();
+
+;; =========================================================
+
 (use-package org-drill
   :after org
   ;; :commands (org-drill)
@@ -1430,7 +1478,7 @@ Containing LEFT, and RIGHT aligned respectively."
                         )))))
     (setq ym-mode-line-toggle-my-short t))
   (force-mode-line-update t))
-(m/toggle-mode-line-short)
+;; (m/toggle-mode-line-short)
 ;; see also https://stackoverflow.com/questions/6672251/easily-display-useful-information-in-custom-emacs-minor-mode-mode-line-woes
 
 ;; highlight minibuffer prompt, because large monitor
@@ -1906,6 +1954,7 @@ Containing LEFT, and RIGHT aligned respectively."
 
 
 
+;; =========================================================
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
