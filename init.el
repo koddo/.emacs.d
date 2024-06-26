@@ -717,7 +717,7 @@ there's a region, all lines that region covers will be duplicated."
 (ym-define-key (kbd "s-m") #'my/scroll-page-up)
 (ym-define-key (kbd "s-n") #'my/scroll-page-down)
 
-(defun my/scroll-command-2 (n-lines)
+(defun my/scroll-a-little-command (n-lines)
   (interactive)
   (let ((we-are-scrolling-already (or (eq last-command #'my/scroll-a-little-up)
                                       (eq last-command #'my/scroll-a-little-down))))
@@ -742,8 +742,8 @@ there's a region, all lines that region covers will be duplicated."
       (setq my/scroll-command---virtual-cur-line (line-number-at-pos my/scroll-command---point-before-scrolling))
       (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start)))))))
 
-(defun my/scroll-a-little-up ()   (interactive) (my/scroll-command-2 (- (/ (window-body-height) 5))))
-(defun my/scroll-a-little-down () (interactive) (my/scroll-command-2 (+ (/ (window-body-height) 5))))
+(defun my/scroll-a-little-up ()   (interactive) (my/scroll-a-little-command (- (/ (window-body-height) 5))))
+(defun my/scroll-a-little-down () (interactive) (my/scroll-a-little-command (+ (/ (window-body-height) 5))))
 (ym-define-key (kbd "s-.") #'my/scroll-a-little-up)    ; used to be just 3, independently of window-body-height
 (ym-define-key (kbd "s-,") #'my/scroll-a-little-down)
 
