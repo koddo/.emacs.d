@@ -692,28 +692,15 @@ there's a region, all lines that region covers will be duplicated."
 (make-variable-buffer-local 'my/scroll-command---column-before-scrolling)
 (make-variable-buffer-local 'my/scroll-command---point-before-scrolling)
 
-;; (defun my/scroll-command (n-lines)
-;;   (interactive)
-;;   (unless
-;;       (or (eq last-command #'my/scroll-down-command)
-;;           (eq last-command #'my/scroll-up-command))
-;;     (setq my/scroll-command---virtual-cur-line
-;;           (line-number-at-pos (point)))
-;;     (setq my/scroll-command---n-lines-from-top
-;;           (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start))))
-;;     (setq my/scroll-command---column-before-scrolling (current-column)))
-;;   (let* ((cur-line my/scroll-command---virtual-cur-line)
-;;          (next-screen-line (+ cur-line n-lines)))
-;;     (unless (or (< next-screen-line (line-number-at-pos (beginning-of-buffer)))
-;;                 (> next-screen-line (line-number-at-pos (end-of-buffer))))
-;;       (goto-line next-screen-line)
-;;       (recenter my/scroll-command---n-lines-from-top)
-;;       (setq my/scroll-command---virtual-cur-line next-screen-line)
-;;       (move-to-column my/scroll-command---column-before-scrolling))))
+;; Please be aware, that this can under- or overscroll when there are images or tall lines in buffer.
+;; The trade-off here is that this is more predictable to me, because I can get back to the exact location from where I started scrolling.
+;; Works perfectly in code files though.
 (defun my/scroll-command (n-lines)
   (interactive)
-  (let ((we-are-scrolling-already (or (eq last-command #'my/scroll-down-command)
-                                      (eq last-command #'my/scroll-up-command))))
+  (let ((we-are-scrolling-already (or (eq last-command #'my/scroll-page-up)
+                                      (eq last-command #'my/scroll-page-down)
+                                      (eq last-command #'my/scroll-a-little-up)
+                                      (eq last-command #'my/scroll-a-little-down))))
     (unless we-are-scrolling-already
       (setq my/scroll-command---virtual-cur-line (line-number-at-pos (point)))
       (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start))))
@@ -733,64 +720,17 @@ there's a region, all lines that region covers will be duplicated."
     (when point-before-scrolling-is-visible-after-recenter 
       (goto-char my/scroll-command---point-before-scrolling)
       (setq my/scroll-command---virtual-cur-line (line-number-at-pos my/scroll-command---point-before-scrolling))
-      (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start))))
-      )))
-(defun my/scroll-down-command () (interactive) (my/scroll-command (- (window-body-height))))
-(defun my/scroll-up-command () (interactive) (my/scroll-command (+ (window-body-height))))
+      (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start)))))))
 
-;; Please be aware, that this can under- or overscroll when there are images or tall lines in buffer.
-;; The trade-off here is that this is more predictable to me, because I can get back to the exact location from where I started scrolling.
-;; Works perfectly in code files though.
-(ym-define-key (kbd "s-m") #'my/scroll-down-command)        ; page up
-(ym-define-key (kbd "s-n") #'my/scroll-up-command)          ; page down
+(defun my/scroll-page-up ()   (interactive) (my/scroll-command (- (window-body-height))))
+(defun my/scroll-page-down () (interactive) (my/scroll-command (+ (window-body-height))))
+(ym-define-key (kbd "s-m") #'my/scroll-page-up)
+(ym-define-key (kbd "s-n") #'my/scroll-page-down)
 
-
-(defun my/scroll-down-command () (interactive) (my/scroll-command (- (/ (window-body-height) 5))))
-(defun my/scroll-up-command () (interactive) (my/scroll-command (+ (/ (window-body-height) 5))))
-(ym-define-key (kbd "s-,") #'my/scroll-up-command)     ; the built-in scroll command is fine for this
-(ym-define-key (kbd "s-.") #'my/scroll-down-command)    ; used to be just 3, independently of window-body-height
-
-
-;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; (defun my/scroll-command-2 (n-lines)
-;;   (interactive)
-;;   (let ((scrolling (or (eq last-command #'my/scroll-down-command-2)
-;;                        (eq last-command #'my/scroll-up-command-2)))
-;;         (p my/scroll-command---point-before-scrolling))
-;;     (unless
-;;         scrolling
-;;       (setq my/scroll-command---point-before-scrolling (point)))
-;;     (scroll-up-command n-lines)
-;;     (when (and scrolling
-;;                (< (window-start) p)
-;;                (< p (window-end)))
-;;       (goto-char p)
-;;       ))
-;;   )
-;; (defun my/scroll-down-command-2 () (interactive) (my/scroll-command-2 (- (/ (window-body-height) 5))))
-;; (defun my/scroll-up-command-2 () (interactive) (my/scroll-command-2 (+ (/ (window-body-height) 5))))
-
-;; ;; (ym-define-key (kbd "s-,") (lambda () (interactive "^") (scroll-up-command (/ (window-body-height) 5))))     ; the built-in scroll command is fine for this
-;; ;; (ym-define-key (kbd "s-.") (lambda () (interactive "^") (scroll-down-command (/ (window-body-height) 5))))    ; used to be just 3, independently of window-body-height
-;; (ym-define-key (kbd "s-,") #'my/scroll-up-command-2)     ; the built-in scroll command is fine for this
-;; (ym-define-key (kbd "s-.") #'my/scroll-down-command-2)    ; used to be just 3, independently of window-body-height
-;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;; https://www.reddit.com/r/emacs/comments/wx7ytn/emacs_29_native_smooth_scrolling/
-;; (setq pixel-scroll-precision-large-scroll-height nil)
-;; (setq pixel-scroll-precision-interpolation-factor 2.0)
-;; (defun joe/smooth-scroll-half-page-down ()
-;;   "Smooth scroll down"
-;;   (interactive)
-;;   (let ((half-height (/ (window-height) 3)))
-;;     (pixel-scroll-precision-interpolate (* 5 (- half-height)))))
-;; (defun joe/smooth-scroll-half-page-up ()
-;;   "Smooth scroll down"
-;;   (interactive)
-;;   (let ((half-height (/ (window-height) 3)))
-;;     (pixel-scroll-precision-interpolate (* 5 half-height))))
-;; (ym-define-key (kbd "s-,") #'joe/smooth-scroll-half-page-down)     ; the built-in scroll command is fine for this
-;; (ym-define-key (kbd "s-.") #'joe/smooth-scroll-half-page-up)
+(defun my/scroll-a-little-up ()   (interactive) (my/scroll-command (- (/ (window-body-height) 5))))
+(defun my/scroll-a-little-down () (interactive) (my/scroll-command (+ (/ (window-body-height) 5))))
+(ym-define-key (kbd "s-.") #'my/scroll-a-little-up)    ; used to be just 3, independently of window-body-height
+(ym-define-key (kbd "s-,") #'my/scroll-a-little-down)
 
 ;; =========================================================
 
