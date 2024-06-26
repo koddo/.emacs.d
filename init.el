@@ -695,7 +695,7 @@ there's a region, all lines that region covers will be duplicated."
 ;; Please be aware, that this can under- or overscroll when there are images or tall lines in buffer.
 ;; The trade-off here is that this is more predictable to me, because I can get back to the exact location from where I started scrolling.
 ;; Works perfectly in code files though.
-(defun my/scroll-command (n-lines)
+(defun my/scroll-page-command (n-lines)
   (interactive)
   (unless
       (or (eq last-command #'my/scroll-page-up)
@@ -712,8 +712,8 @@ there's a region, all lines that region covers will be duplicated."
       (setq my/scroll-command---virtual-cur-line next-screen-line)
       (move-to-column my/scroll-command---column-before-scrolling))))
 
-(defun my/scroll-page-up ()   (interactive) (my/scroll-command (- (window-body-height))))
-(defun my/scroll-page-down () (interactive) (my/scroll-command (+ (window-body-height))))
+(defun my/scroll-page-up ()   (interactive) (my/scroll-page-command (- (window-body-height))))
+(defun my/scroll-page-down () (interactive) (my/scroll-page-command (+ (window-body-height))))
 (ym-define-key (kbd "s-m") #'my/scroll-page-up)
 (ym-define-key (kbd "s-n") #'my/scroll-page-down)
 
@@ -1930,6 +1930,8 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
+;; Make help buffers stick by renaming them
+
 (defun jue-clone-buffer ()    ; from https://emacs.stackexchange.com/questions/33156/how-can-i-have-multiple-help-buffers-with-different-content
   "jue clone current buffer. Useful to have multiple help buffers."
   (interactive)
@@ -1941,11 +1943,76 @@ Containing LEFT, and RIGHT aligned respectively."
                  t))                                      ; show cloned buffer now
 (defun m/rename-help-buffer-when-it-is-populated ()    ; for some reason cloning directly in the hook doesn't work, we have to wait
   (interactive)
-  (run-at-time "10 millisecond" nil #'jue-clone-buffer))
+  (run-at-time "100 millisecond" nil #'jue-clone-buffer))
 (add-hook 'help-mode-hook #'m/rename-help-buffer-when-it-is-populated)
 ;; (remove-hook 'help-mode-hook #'m/rename-help-buffer-when-it-is-populated)
 
 ;; maybe write the same thing for occur, grep, rg, etc
+
+;; =========================================================
+
+;; electric-pair-mode is enough most of the time
+;; I don't use strict mode and soft deletion from puni and smartparens
+(electric-pair-mode t)    ; insert () together and wrap into parens
+
+(use-package puni
+  ;; No configuration here. I just directly use functions from puni, smartparens, lispy, etc
+  )
+
+(use-package smartparens
+  ;; :demand t
+  ;; :diminish smartparens-mode smartparens-global-mode show-smartparens-mode show-smartparens-global-mode
+  :config
+  (require 'smartparens-config)   ; default configuration
+  (setq sp-navigate-reindent-after-up-in-string nil)
+  (setq sp-navigate-reindent-after-up nil)
+
+  ;;;; I now use electric-pair-mode
+  ;; (smartparens-global-mode 1)     ; used to be (smartparens-global-strict-mode 1), but I don't need it to be that strict
+  ;; (show-smartparens-global-mode 1)
+
+  ;;;; customize sp-show-pair-match-content-face if you want to highlight not only parens but also the content of the s-exp
+  ;; '(sp-show-pair-enclosing ((t (:inherit show-paren-match))))
+  )
+
+
+;; highlight matching parenthesis
+(require 'paren)   ; I prefer stock show-paren-mode over show-smartparen-mode because it's ultra-fast
+;; (setq show-paren-delay 0)
+;; (setq show-paren-delay 0.1)
+;; (setq show-paren-delay 0.05)
+(setq show-paren-delay 0.01)
+(show-paren-mode 1)
+;; (show-paren-mode -1)
+(setq show-paren-style 'parenthesis)
+(setq show-paren-context-when-offscreen 'overlay)
+(copy-face 'default 'show-paren-match)
+(set-face-attribute 'show-paren-match nil
+                    :weight 'bold
+                    :foreground "black"
+                    :background "grey"         ; was ym-hl-line-color-normal-mode-color
+                    )    ; inherited by show-paren-match-expression
+
+(use-package expand-region)
+(use-package lispy)
+(use-package symex)
+
+;; =========================================================
+
+;; https://demonastery.org/2013/04/emacs-narrow-to-region-indirect/
+;; https://emacs.stackexchange.com/questions/12180/why-use-indirect-buffers/12185#12185
+(defun narrow-to-region-indirect (start end)
+  "Restrict editing in this buffer to the current region, indirectly."
+  (interactive "r")
+  (deactivate-mark)
+  (let ((buf (clone-indirect-buffer nil nil)))
+    (with-current-buffer buf
+      (narrow-to-region start end)
+      ;; (python-mode)
+      )
+    (switch-to-buffer buf)
+    (font-lock-fontify-buffer)   ; without this the colors get lost
+    ))
 
 ;; =========================================================
 
