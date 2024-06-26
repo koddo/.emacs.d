@@ -697,9 +697,29 @@ there's a region, all lines that region covers will be duplicated."
 ;; Works perfectly in code files though.
 (defun my/scroll-command (n-lines)
   (interactive)
-  (let ((we-are-scrolling-already (or (eq last-command #'my/scroll-page-up)
-                                      (eq last-command #'my/scroll-page-down)
-                                      (eq last-command #'my/scroll-a-little-up)
+  (unless
+      (or (eq last-command #'my/scroll-page-up)
+          (eq last-command #'my/scroll-page-down))
+    (setq my/scroll-command---virtual-cur-line (line-number-at-pos (point)))
+    (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start))))
+    (setq my/scroll-command---column-before-scrolling (current-column)))
+  (let* ((cur-line my/scroll-command---virtual-cur-line)
+         (next-screen-line (+ cur-line n-lines)))
+    (unless (or (< next-screen-line (line-number-at-pos (beginning-of-buffer)))
+                (> next-screen-line (line-number-at-pos (end-of-buffer))))
+      (goto-line next-screen-line)
+      (recenter my/scroll-command---n-lines-from-top)
+      (setq my/scroll-command---virtual-cur-line next-screen-line)
+      (move-to-column my/scroll-command---column-before-scrolling))))
+
+(defun my/scroll-page-up ()   (interactive) (my/scroll-command (- (window-body-height))))
+(defun my/scroll-page-down () (interactive) (my/scroll-command (+ (window-body-height))))
+(ym-define-key (kbd "s-m") #'my/scroll-page-up)
+(ym-define-key (kbd "s-n") #'my/scroll-page-down)
+
+(defun my/scroll-command-2 (n-lines)
+  (interactive)
+  (let ((we-are-scrolling-already (or (eq last-command #'my/scroll-a-little-up)
                                       (eq last-command #'my/scroll-a-little-down))))
     (unless we-are-scrolling-already
       (setq my/scroll-command---virtual-cur-line (line-number-at-pos (point)))
@@ -722,13 +742,8 @@ there's a region, all lines that region covers will be duplicated."
       (setq my/scroll-command---virtual-cur-line (line-number-at-pos my/scroll-command---point-before-scrolling))
       (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start)))))))
 
-(defun my/scroll-page-up ()   (interactive) (my/scroll-command (- (window-body-height))))
-(defun my/scroll-page-down () (interactive) (my/scroll-command (+ (window-body-height))))
-(ym-define-key (kbd "s-m") #'my/scroll-page-up)
-(ym-define-key (kbd "s-n") #'my/scroll-page-down)
-
-(defun my/scroll-a-little-up ()   (interactive) (my/scroll-command (- (/ (window-body-height) 5))))
-(defun my/scroll-a-little-down () (interactive) (my/scroll-command (+ (/ (window-body-height) 5))))
+(defun my/scroll-a-little-up ()   (interactive) (my/scroll-command-2 (- (/ (window-body-height) 5))))
+(defun my/scroll-a-little-down () (interactive) (my/scroll-command-2 (+ (/ (window-body-height) 5))))
 (ym-define-key (kbd "s-.") #'my/scroll-a-little-up)    ; used to be just 3, independently of window-body-height
 (ym-define-key (kbd "s-,") #'my/scroll-a-little-down)
 
