@@ -58,8 +58,13 @@
 
 (setq truncate-partial-width-windows nil)     ; I use visual-lines-mode instead
 
-(setq-default truncate-lines t)    ;; In case if you're confused about the word-wrap variable, here's a clarification: Instead of setting this variable directly, most users should use Visual Line mode.
-(global-visual-line-mode -1)   ;; Now toggle visual-line-mode per buffer via hydra.
+(progn
+ (setq-default truncate-lines t)    ;; In case if you're confused about the word-wrap variable, here's a clarification: Instead of setting this variable directly, most users should use Visual Line mode.
+
+ (global-visual-line-mode -1)   ;; Now toggle visual-line-mode per buffer via hydra.
+ (with-eval-after-load 'org
+   (add-hook 'org-mode-hook #'visual-line-mode))
+ )
 
 (put 'downcase-region 'disabled nil)
 (put   'upcase-region 'disabled nil)
@@ -662,9 +667,7 @@
 
 ;; =========================================================
 
-;; TODO: hydra
-
-(defun ym-delete-current-line-or-region ()
+(defun ym/delete-current-line-or-region ()
   (interactive)
   (let* ((beg (save-excursion (if (and mark-active (> (point) (mark))) (exchange-point-and-mark))
 			                  (move-beginning-of-line 1)
@@ -678,7 +681,7 @@
     (move-to-column orig-col)
     ))
 
-(defun ym-kill-current-line-or-region ()
+(defun ym/kill-current-line-or-region ()
   (interactive)
   (let* ((beg (save-excursion (if (and mark-active (> (point) (mark))) (exchange-point-and-mark))
 			                  (move-beginning-of-line 1)
@@ -692,7 +695,7 @@
     (move-to-column orig-col)
     ))
 
-(defun ym-copy-current-line-or-region ()
+(defun ym/copy-current-line-or-region ()
   (interactive)
   (let* ((beg (save-excursion (if (and mark-active (> (point) (mark))) (exchange-point-and-mark))
 			                  (move-beginning-of-line 1)
@@ -723,7 +726,7 @@
                                                        (forward-line -1))
                                                    (end-of-line) (point))))))
 
-(defun ym-duplicate-current-line-or-region (arg)   ; took it from here: http://tuxicity.se/emacs/elisp/2010/03/11/duplicate-current-line-or-region-in-emacs.html
+(defun ym/duplicate-current-line-or-region (arg)   ; took it from here: http://tuxicity.se/emacs/elisp/2010/03/11/duplicate-current-line-or-region-in-emacs.html
   "Duplicates the current line or region ARG times.
 If there's no region, the current line will be duplicated. However, if
 there's a region, all lines that region covers will be duplicated."
@@ -745,7 +748,7 @@ there's a region, all lines that region covers will be duplicated."
         (setq end (point)))
       (goto-char (+ origin (* (length region) arg) arg)))))
 
-(defun ym-duplicate-and-comment-current-line-or-region (arg)   ; took it from here: http://tuxicity.se/emacs/elisp/2010/03/11/duplicate-current-line-or-region-in-emacs.html
+(defun ym/duplicate-and-comment-current-line-or-region (arg)   ; took it from here: http://tuxicity.se/emacs/elisp/2010/03/11/duplicate-current-line-or-region-in-emacs.html
   "Duplicates the current line or region ARG times.
 If there's no region, the current line will be duplicated. However, if
 there's a region, all lines that region covers will be duplicated."
@@ -773,14 +776,7 @@ there's a region, all lines that region covers will be duplicated."
       ;; but on the other hand, it's not really important
       )))
 
-(ym-define-key (kbd "s-S-<backspace>") #'ym-delete-current-line-or-region)
-(ym-define-key (kbd "s-/") #'ym/comment-or-uncomment-line-or-region)
-;; (ym-define-key (kbd "C-S-<backspace>") #'ym-copy-current-line-or-region)
-;; (ym-define-key (kbd "M-S-<backspace>") #'ym-kill-current-line-or-region)      ; Doesn't work at the moment, because alt+shift toggles layout.
-;; (ym-define-key (kbd "s-d") #'ym-duplicate-current-line-or-region)
-;; (ym-define-key (kbd "s-D") #'ym-duplicate-and-comment-current-line-or-region)
-
-(defun ym-backward-kill-word ()
+(defun ym/backward-kill-word ()
   "Similar to backward-kill-word, but treats newlines and whitespace sequences as a words."
   (interactive)
   (if (bolp)
@@ -798,8 +794,24 @@ there's a region, all lines that region covers will be duplicated."
                                             (point))
                                           ))   ; comment this block if removing whitespaces only is annoying
                         ))))
-(ym-define-key (kbd "<M-backspace>") #'ym-backward-kill-word)
-(ym-define-key (kbd "<s-backspace>") #'ym-backward-kill-word)
+
+(ym-define-key (kbd "s-S-<backspace>") #'ym/delete-current-line-or-region)
+(ym-define-key (kbd "s-M-x") #'ym/kill-current-line-or-region)
+(ym-define-key (kbd "s-M-c") #'ym/copy-current-line-or-region)
+(ym-define-key (kbd "s-/") #'ym/comment-or-uncomment-line-or-region)
+(ym-define-key (kbd "M-s-/") #'ym/duplicate-and-comment-current-line-or-region)
+(ym-define-key (kbd "M-d") #'ym/duplicate-current-line-or-region)
+(ym-define-key (kbd "<M-backspace>") #'ym/backward-kill-word)
+(ym-define-key (kbd "<s-backspace>") #'ym/backward-kill-word)
+
+(use-package drag-stuff
+  :config
+  ;; (drag-stuff-mode t)    ; I use its functions directly
+  ;; drag-stuff-before-drag-hook
+  ;; drag-stuff-after-drag-hook
+
+  ;; hidden in a hydra
+  )
 
 ;; =========================================================
 
@@ -1233,7 +1245,6 @@ there's a region, all lines that region covers will be duplicated."
   (setq org-outline-path-complete-in-steps nil)
   (setq org-agenda-window-setup 'only-window)
   (setq org-agenda-sticky t)
-  (add-hook 'org-mode-hook #'visual-line-mode)
   (setq org-startup-with-inline-images t)
   (setq org-hide-leading-stars t)   ; customize the org-hide face for this, set it to light gray
   (setq org-src-preserve-indentation t)  ; from https://emacs.stackexchange.com/questions/18877/how-to-indent-without-the-two-extra-spaces-at-the-beginning-of-code-blocks-in-or
@@ -1671,8 +1682,6 @@ Containing LEFT, and RIGHT aligned respectively."
     (setq ym-mode-line-show-line-column-position t))
   (force-mode-line-update))
 
-;; TODO: hydra
-
 ;; =========================================================
 
 ;; this is the new winner-mode
@@ -1713,6 +1722,37 @@ Containing LEFT, and RIGHT aligned respectively."
 ;; tab-bar behaviour and appearance: https://github.com/daviwil/emacs-from-scratch/blob/82f03806d90eb356b815cf514d10b6d863a2cbdc/show-notes/Emacs-Tips-06.org
 ;; tab-bar menu, and other arbitrary info in tab-bar: https://karthinks.com/software/a-tab-bar-menu-in-emacs/
 ;; https://lambdaland.org/posts/2022-07-20_adding_a_clock_to_emacs/
+
+;; =========================================================
+
+;; Highlith the active window. Or the other way around, dim all inactive windows.
+
+;; When you have one buffer in multiple windows, these windows are not dimmed.
+;; In this case use indirect buffers: clone-indirect-buffer-other-window
+
+;; https://emacs.stackexchange.com/questions/24630/is-there-a-way-to-change-color-of-active-windows-fringe
+;; https://stackoverflow.com/questions/47456134/emacs-lisp-hooks-for-detecting-change-of-active-buffer
+(defun ym/highlight-selected-window ()
+  "Highlight selected window with a different background color."
+  (let ((hydra-window lv-wnd))        ; this is the hydra echo area, see https://github.com/abo-abo/hydra/blob/master/lv.el
+    (walk-windows (lambda (w)
+                    (cond 
+                     ((eq (window-buffer w) (window-buffer (selected-window)))         ; if you want to dim same buffers, use (eq w (selected-window))
+                      (buffer-face-set 'default))
+                     ((eq (window-buffer w) (window-buffer hydra-window))         ; saved for history: (eq w hydra-window)
+                      (with-current-buffer (window-buffer w)
+                        (buffer-face-set '(:background "grey"))))
+                     (t
+                      (with-current-buffer (window-buffer w)
+                        (buffer-face-set '(:background "grey90"))))
+                     )))))
+(add-hook 'buffer-list-update-hook #'ym/highlight-selected-window)
+(add-hook 'window-configuration-change-hook #'ym/highlight-selected-window)
+;; (remove-hook 'buffer-list-update-hook #'ym/highlight-selected-window)
+;; (remove-hook 'window-configuration-change-hook #'ym/highlight-selected-window)
+  
+;; see an alternative:
+;; a package that apparently does the same: https://github.com/mina86/auto-dim-other-buffers.el
 
 ;; =========================================================
 
@@ -2278,7 +2318,7 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; https://demonastery.org/2013/04/emacs-narrow-to-region-indirect/
 ;; https://emacs.stackexchange.com/questions/12180/why-use-indirect-buffers/12185#12185
-(defun my/narrow-to-region-indirect (start end)
+(defun m/narrow-to-region-indirect (start end)
   "Restrict editing in this buffer to the current region, indirectly."
   (interactive "r")
   (deactivate-mark)
@@ -2291,38 +2331,23 @@ Containing LEFT, and RIGHT aligned respectively."
     (font-lock-fontify-buffer)   ; without this the colors get lost
     ))
 
-;; TODO: hydra
-
 ;; =========================================================
 
-(use-package drag-stuff
-  :config
-  ;; (drag-stuff-mode t)
-  ;; drag-stuff-before-drag-hook
-  ;; drag-stuff-after-drag-hook
-  )
+(pretty-hydra-define hydra-aaa ()
+  (
+   ""
+   (
+    ("M-i" drag-stuff-up :exit nil)
+    ("M-k" drag-stuff-down :exit nil)
+    ("M-l" drag-stuff-right :exit nil)
+    ("M-j" drag-stuff-left :exit nil)
 
-;; drag-stuff-up
-;; drag-stuff-down
-;; drag-stuff-right
-;; drag-stuff-left
-;; drag-stuff-line-up
-;; drag-stuff-line-down
-;; drag-stuff-line-vertically
-;; drag-stuff-lines-up
-;; drag-stuff-lines-down
-;; drag-stuff-lines-vertically
-;; drag-stuff-drag-region-up
-;; drag-stuff-drag-region-down
-;; drag-stuff-whole-lines-region
-;; drag-stuff-region-left
-;; drag-stuff-region-right
-;; drag-stuff-region-horizontally
-;; drag-stuff-word-left
-;; drag-stuff-word-right
-;; drag-stuff-word-horizontally
+    ("m" m/mode-line-short :exit t)
+    ("n" m/narrow-to-region-indirect :exit t)
+    )
+   ))
 
-;; TODO: hydra
+(global-set-key (kbd "M-a") 'hydra-aaa/body)
 
 ;; =========================================================
 
@@ -2362,6 +2387,9 @@ Containing LEFT, and RIGHT aligned respectively."
  '(rainbow-delimiters-depth-4-face ((t (:foreground "peru"))))
  '(rainbow-delimiters-depth-5-face ((t (:foreground "grey50"))))
  '(rainbow-delimiters-depth-6-face ((t (:foreground "black")))))
+
+
+
 
 
 
