@@ -213,6 +213,7 @@
 
 (save-place-mode 1)
 ;; save-place-forget-unreadable-files is t by default, this make quitting emacs slow
+;; to disable it in a file: ;; -*- eval: (save-place-local-mode -1); -*-
 
 (savehist-mode 1)
 (setq history-length 25)    ; default: 100
@@ -409,8 +410,18 @@
 ;; (ym-define-key (kbd "<S-right>") nil)
 
 (ym-define-key (kbd "<M-tab>") nil)
-;; <s-tab> is cmd-tab, binding is useless
-;; <M-s-tab>, <S-s-tab>, <M-S-tab> are not convenient
+(ym-define-key (kbd "<C-tab>") nil)
+(ym-define-key (kbd "<C-M-tab>") nil)
+(ym-define-key (kbd "<M-s-tab>") nil)
+(progn
+  (ym-define-key (kbd "<s-tab>") nil)   ; = cmd-tab, binding is useless
+  (ym-define-key (kbd "<S-s-tab>") nil))   ; = cmd-tab, binding is useless
+(progn
+  (ym-define-key (kbd "C-S-<tab>") nil)     ; these two should be the same keybinding
+  (ym-define-key (kbd "C-S-<iso-lefttab>") nil))
+(progn
+  (ym-define-key (kbd "<M-S-tab>") nil)
+  (ym-define-key (kbd "<M-S-iso-lefttab>") nil))
 
 ;; (ym-define-key (kbd "<backtab>") nil)   ; = <S-tab>, it is probably used by org-mode.
 
@@ -527,6 +538,131 @@
 (ym-define-key (kbd "s-3") 'tab-bar-history-forward)
 
 ;; =========================================================
+
+(use-package hydra)
+(use-package pretty-hydra)
+(use-package major-mode-hydra)     ;; https://github.com/jerrypnz/major-mode-hydra.el
+
+;; =========================================================
+
+;; completion for hydras
+
+;; this is my slightly modified version of Sacha Chua's code
+;; made completions look like "f: follow mode"
+
+;; https://sachachua.com/blog/2021/04/emacs-hydra-allow-completion-when-i-can-t-remember-the-command-name/
+;; https://sachachua.com/dotemacs/index.html#hydra-completion
+;; https://www.reddit.com/r/emacs/comments/123l17j/completions_of_functions_in_hydra_when_you_forget/
+
+(defun my/hydra-format-head (h)
+  (let ((key-binding (elt h 0))
+        (hint (elt h 2))
+        (cmd (and (elt h 1) (prin1-to-string (elt h 1)))))
+    (format "%s: %s" key-binding hint)
+    ;; (if cmd
+    ;;     (format "%s (%s) - %s" hint key-binding cmd)
+    ;;   (format "%s (%s)" hint key-binding))
+    ))
+
+(defun my/hydra-current-heads-as-candidates ()
+  (let* ((base (replace-regexp-in-string "/body$" "" (symbol-name hydra-curr-body-fn)))
+         (heads-plist (symbol-value (intern (concat base "/heads-plist"))))
+         (heads-plist-values (cl-loop for (key value) on heads-plist by 'cddr collect value))
+         (heads (apply #'append heads-plist-values)))
+    (mapcar (lambda (h)
+              (cons (my/hydra-format-head h) (hydra--head-name h (intern base))))
+            heads)))      ; fixed: used to be (symbol-value (intern (concat base "/heads"))), but instead of /heads-plisp it somehow doesn't contain hints, they all are nil
+
+(defun my/hydra-execute-extended (prefixarg &optional command-name typed)
+  (declare (interactive-only command-execute))
+  (interactive (let ((execute-extended-command--last-typed nil)
+                     (candidates (my/hydra-current-heads-as-candidates)))
+                 (hydra-keyboard-quit)
+                 (list current-prefix-arg
+                       (completing-read "Cmd: " candidates)
+                       execute-extended-command--last-typed)))
+  (let* ((candidates (my/hydra-current-heads-as-candidates))
+         (bind (assoc-default command-name candidates 'string=)))
+    (cond
+     ((null bind) nil)
+     ((hydra--callablep bind) (call-interactively bind)))))
+
+(with-eval-after-load 'hydra
+  (define-key hydra-base-map (kbd "<tab>") #'my/hydra-execute-extended))
+
+;; =========================================================
+
+;; jump to definition of hydra
+
+(defun ym/go-to-definition-of-hydra ()
+  (interactive)
+  (hydra-keyboard-quit)
+  (find-function hydra-curr-body-fn)
+  )
+
+(with-eval-after-load 'hydra
+  (define-key hydra-base-map (kbd "M-s-u") #'ym/go-to-definition-of-hydra))
+
+;; =========================================================
+
+;; from https://github.com/abo-abo/hydra/issues/268
+;; delay showing of hydra while when we do something like navigating windows or moving buffers
+;; without this code the hydra is shown after the very first keypress
+
+;; usage: ("j" (csb-wrap-ignore-error 'user-error (windmove-left)) "windmove-left")
+
+(defun timer-reset (timer-sym secs fun)
+  (let ((timer (and (boundp timer-sym) (symbol-value timer-sym))))
+    (if (timerp timer)
+        (cancel-timer timer)
+      (setq timer (set timer-sym (timer-create))))
+    (timer-set-time
+     timer
+     (timer-relative-time (current-time) secs))
+    (timer-set-function timer fun)
+    (timer-activate timer)))
+
+(defun csb-hide ()
+  ;; (hydra-disable)
+  (hydra-set-property 'hydra-window :verbosity 0)
+  ;; (hydra-window/body)
+  )
+
+(defun csb-show ()
+  (hydra-set-property 'hydra-window :verbosity t)      ; 1 is for terminal emacs, otherwise t; see the hydra-show-hint function definition
+  (let ((hydra-active (eq hydra-curr-map hydra-window/keymap))
+        (f (timer--function hydra-message-timer))
+        (a (timer--args hydra-message-timer))
+        )
+    (when hydra-active
+      (hydra-window/body)
+      (progn   ; show hydra immediately, without the idle delay, because we already waited for the moment to show
+       (cancel-timer hydra-message-timer)
+       (apply f a))
+      )))
+
+(defmacro csb-wrap (&rest body)
+  `(progn
+     ,@body
+     (csb-hide)
+     (timer-reset 'csb-timer 0.7 'csb-show)
+     ))
+
+(defmacro csb-wrap-ignore-error (condition &rest body)
+  `(progn
+     (ignore-error ,condition ,@body)
+     (csb-hide)
+     (timer-reset 'csb-timer 0.7 'csb-show)))
+
+(defmacro csb-wrap-ignore-all-errors (&rest body)
+  `(progn
+     (ignore-errors ,@body)
+     (csb-hide)
+     (timer-reset 'csb-timer 0.7 'csb-show)))
+
+;; =========================================================
+
+;; TODO: hydra
 
 (defun ym-delete-current-line-or-region ()
   (interactive)
@@ -1027,7 +1163,6 @@ there's a region, all lines that region covers will be duplicated."
 (use-package smartscan)     ; for searching symbols with a single keybinding, https://github.com/mickeynp/smart-scan
 (use-package hide-lines)    ; hide lines that match regexp, https://github.com/vapniks/hide-lines
 (use-package copy-as-format)    ; https://github.com/sshaw/copy-as-format
-(use-package isend-mode)    ; equivalent of eval-region for shell buffers and any repls
 (use-package yaml-pro)    ; https://github.com/zkry/yaml-pro
 (use-package minimap    ; https://github.com/dengste/minimap
   :config
@@ -1107,6 +1242,7 @@ there's a region, all lines that region covers will be duplicated."
     (setq org-link-elisp-skip-confirm-regexp ".*"))
   (setq org-link-descriptive nil)   ; shows links as is, e.g., [[http://example.com][example]], doesn't collapse to just example
   (setq org-cycle-separator-lines 0)    ; number of blank lines between trees when folded, default: 2; set it to -1 to preserve all whitespace; mine is set to 0 to have more content on screen
+  (setq org-fontify-quote-and-verse-blocks t)   ; otherwise they are not highlighted
   ;; (setq org-refile-targets '((org-agenda-files :maxlevel . 3)))    ; (setq org-refile-targets '(("~/werk" :maxlevel . 3)))
 
   ;; strike-though text color in org-mode
@@ -1135,6 +1271,8 @@ there's a region, all lines that region covers will be duplicated."
     (set-face-attribute 'org-drawer nil :foreground (plist-get ym-base16-colors-darker :base03))
     (set-face-attribute 'org-date   nil :foreground (plist-get ym-base16-colors-darker :base03))
     (set-face-attribute 'org-hide   nil :foreground "grey80")
+    (set-face-attribute 'org-block-begin-line  nil :foreground "grey50" :background "grey95")    ; org-block-end-line inherits this
+    (set-face-attribute 'org-block             nil :foreground "grey50" :background "grey95")
     (let ((f "#5c69cc"))
       (set-face-attribute 'org-level-1 nil :height 5.0 :foreground f)  ; "#ae1200"
       (set-face-attribute 'org-level-2 nil :height 3.0 :foreground f)
@@ -1143,13 +1281,13 @@ there's a region, all lines that region covers will be duplicated."
       (set-face-attribute 'org-level-5 nil :height 1.0 :foreground f)
       (set-face-attribute 'org-level-6 nil :height 1.0 :foreground f)
       (set-face-attribute 'org-level-7 nil :height 1.0 :foreground f)
-      (set-face-attribute 'org-level-8 nil :height 1.0 :foreground f))
-    ))
+      (set-face-attribute 'org-level-8 nil :height 1.0 :foreground f)
+      )))
 
 ;; =========================================================
-;; https://github.com/abo-abo/org-download
+
 ;; usage: org-download-screenshot, org-download-image, org-download-edit, org-download-delete
-(use-package org-download
+(use-package org-download    ; https://github.com/abo-abo/org-download
   :after org
   :config
   (setq-default org-download-heading-lvl nil)   ; don't take header text into account, just put everything into the specified folder
@@ -1175,7 +1313,39 @@ there's a region, all lines that region covers will be duplicated."
 
 ;; =========================================================
 
+(use-package isend-mode)    ; equivalent of eval-region for shell buffers and any repls
+
+(add-hook 'shell-mode-hook 'compilation-shell-minor-mode)
+;; Usage: M-x compile-goto-error or simply the enter key
+;; init-hydras.el:30:3
+
+;; =========================================================
+
+(use-package find-file-in-project    ; https://github.com/redguardtoo/find-file-in-project
+  :config
+  (setq ffip-prefer-ido-mode t)
+
+  ;; find-file-in-project-at-point
+  ;; find-file-in-project-by-selected     ; in combination with er/expand-region, because early-init.el:3 works, but early-init.el:3:3 doesn't
+  ;; find-file-with-similar-name
+  ;; find-directory-in-project-by-selected
+  ;; find-file-in-current-directory
+  ;; find-file-in-current-directory-by-selected
+  ;; etc
+  )
+
+;; alternatives:
+;; I like this one: https://github.com/emacsmirror/emacswiki.org/blob/master/find-file-with-line-number
+;; https://emacs.stackexchange.com/questions/38651/quick-jump-to-a-specific-line-of-a-file
+;; https://unix.stackexchange.com/questions/691444/how-do-i-open-a-file-at-specific-line-in-a-running-emacs
+;; https://stackoverflow.com/questions/3139970/open-a-file-at-line-with-filenameline-syntax
+;; $ emacsclient +4:3 FILE
+
+;; =========================================================
+
 ;; (require 'org-protocol)
+
+;; I don't use org-protocol, I use the following bookmarklets instead:
 
 ;; ;; Copylet
 ;; javascript:(function() {
@@ -1241,7 +1411,7 @@ there's a region, all lines that region covers will be duplicated."
 (use-package org-modern    ; https://github.com/minad/org-modern
   :after org
   :config
-  (setq org-modern-block-fringe 4)
+  (setq org-modern-block-fringe 3)
 
   (setq org-modern-block-name nil)
   (setq org-modern-checkbox nil)
@@ -1408,84 +1578,79 @@ Containing LEFT, and RIGHT aligned respectively."
             (list (format (format "%%%ds" available-width) ""))
             right)))
 
-;; (with-eval-after-load 'subr-x
-;;   (setq-default mode-line-buffer-identification
-;;                 '(:eval (format-mode-line (propertized-buffer-identification (or (when-let* ((buffer-file-truename buffer-file-truename)
-;;                                                                                              (prj (cdr-safe (project-current)))
-;;                                                                                              (prj-parent (file-name-directory (directory-file-name (expand-file-name prj)))))
-;;                                                                                    (concat (file-relative-name (file-name-directory buffer-file-truename) prj-parent) (file-name-nondirectory buffer-file-truename)))
-;;                                                                                  "%b"))))))
-
 ;; My own short mode-line.
 ;; For performance reasons mostly, because I use a lot of modes, and regular mode-line becomes a bottleneck, it evaluates a lot of things constantly.
 ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/_0025_002dConstructs.html
-(defvar ym-mode-line-toggle-my-short t)
-(defun m/toggle-mode-line-short ()
+(defvar ym-mode-line-short-enabled t)
+(defun m/mode-line-short (&optional enable)
   (interactive)
-  (if ym-mode-line-toggle-my-short
-      (progn
-        (setq-default mode-line-format
-                      (list
-                       (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
-                       '(:eval
-                         (ym/align-mode-line
-                          ;;;; ----- Left.
-                          '(
-                            " "
-                            (:eval (when buffer-read-only "%%")
-                                   (when (buffer-narrowed-p) "n");       = "%n"
-                                   (when (file-remote-p default-directory) "@")   ; = "%@"
-                                   )
-                            " "
-
-                            ;; ;; mode-line-buffer-identification
-                            ;; (:eval (when buffer-file-name      ; see also the m/prepend-home-dir-to-buffer-name function
-                            ;; (propertize
-                            ;;  (file-name-nondirectory buffer-file-name)    ; or "%b", but it can show "init.el\.emacs.d"
-                            ;;  'face 'mode-line-buffer-id)))
-                            ;; " "
-                            ;; (:eval (if buffer-file-name
-                            ;;            (abbreviate-file-name (file-name-as-directory (file-name-directory buffer-file-name)))
-                            ;;          "%b"))
-
-                            ;; "%b"   ; instead of the commented block above
-                            (:eval (propertize "%b" 'face 'mode-line-buffer-id))
-                            )
-                          ;;;; ----- Right.
-                          '("   "
-                            mode-line-end-spaces
-                            )))))
-        (setq ym-mode-line-toggle-my-short nil))
-    (progn
+  (cond
+   ((null enable) (if ym-mode-line-short-enabled
+                      (setq ym-mode-line-short-enabled nil)
+                    (setq ym-mode-line-short-enabled t)))
+   ((> enable 0) (setq ym-mode-line-short-enabled t))
+   ((< enable 0) (setq ym-mode-line-short-enabled nil)))
+  (if ym-mode-line-short-enabled
       (setq-default mode-line-format
                     (list
                      (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
                      '(:eval
                        (ym/align-mode-line
-                        ;; Left.
+                          ;;;; ----- Left.
                         '(
-                          "%e"    ; indication of nearly out of memory for Lisp objects
-                          mode-line-front-space
-                          mode-line-mule-info
-                          mode-line-client
-                          mode-line-modified
-                          mode-line-remote
-                          mode-line-frame-identification
-                          mode-line-buffer-identification
-                          )
+                          " "
+                          (:eval (when buffer-read-only "%%")
+                                 (when (buffer-narrowed-p) "n");       = "%n"
+                                 (when (file-remote-p default-directory) "@")   ; = "%@"
+                                 )
+                          " "
 
-                        ;; Right.
+                          ;;;; mode-line-buffer-identification
+                          ;;;; this highlights the filename and dims the path
+                          ;; (:eval (when buffer-file-name      ; see also the m/prepend-home-dir-to-buffer-name function
+                          ;; (propertize
+                          ;;  (file-name-nondirectory buffer-file-name)    ; or "%b", but it can show "init.el\.emacs.d"
+                          ;;  'face 'mode-line-buffer-id)))
+                          ;; " "
+                          ;; (:eval (if buffer-file-name
+                          ;;            (abbreviate-file-name (file-name-as-directory (file-name-directory buffer-file-name)))
+                          ;;          "%b"))
+
+                          ;; "%b"   ; instead of the commented block above
+                          (:eval (propertize "%b" 'face 'mode-line-buffer-id))
+                          )
+                          ;;;; ----- Right.
                         '("   "
-                          (:eval (when ym-mode-line-show-line-column-position mode-line-position))         ; or maybe "%l:%c"
-                          ;; (vc-mode vc-mode)
-                          "  "
-                          mode-line-modes
-                          mode-line-misc-info
-                          mode-line-end-spaces)
-                        )))))
-    (setq ym-mode-line-toggle-my-short t))
+                          mode-line-end-spaces
+                          )))))
+    (setq-default mode-line-format
+                  (list
+                   (propertize "\u200b" 'display '((raise -0.4) (height 1.6)))          ; a zero-width character in mode-line in order to make it wider vertically
+                   '(:eval
+                     (ym/align-mode-line
+                      ;; Left.
+                      '(
+                        "%e"    ; indication of nearly out of memory for Lisp objects
+                        mode-line-front-space
+                        mode-line-mule-info
+                        mode-line-client
+                        mode-line-modified
+                        mode-line-remote
+                        mode-line-frame-identification
+                        mode-line-buffer-identification
+                        )
+
+                      ;; Right.
+                      '("   "
+                        (:eval (when ym-mode-line-show-line-column-position mode-line-position))         ; or maybe "%l:%c"
+                        ;; (vc-mode vc-mode)
+                        "  "
+                        mode-line-modes
+                        mode-line-misc-info
+                        mode-line-end-spaces)
+                      )))))
   (force-mode-line-update t))
-;; (m/toggle-mode-line-short)
+(m/mode-line-short 1)
 ;; see also https://stackoverflow.com/questions/6672251/easily-display-useful-information-in-custom-emacs-minor-mode-mode-line-woes
 
 ;; highlight minibuffer prompt, because large monitor
@@ -1505,6 +1670,8 @@ Containing LEFT, and RIGHT aligned respectively."
       (setq ym-mode-line-show-line-column-position nil)
     (setq ym-mode-line-show-line-column-position t))
   (force-mode-line-update))
+
+;; TODO: hydra
 
 ;; =========================================================
 
@@ -1589,6 +1756,8 @@ Containing LEFT, and RIGHT aligned respectively."
    '(rainbow-delimiters-depth-6-face ((t (:foreground "black"))))
    )
   )
+
+;; TODO: hydra
 
 ;; =========================================================
 
@@ -1752,6 +1921,8 @@ Containing LEFT, and RIGHT aligned respectively."
   ;; projectile-add-known-project
   )
 
+;; TODO: hydra
+
 ;; =========================================================
 
 ;; (use-package ag)
@@ -1766,6 +1937,8 @@ Containing LEFT, and RIGHT aligned respectively."
   ;; https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file
   )
 
+;; TODO: hydra
+
 ;; =========================================================
 
 (use-package eldoc
@@ -1777,20 +1950,22 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
-(ym-define-key (kbd "M-<tab>") #'completion-at-point)      ; corfu is integrated
-
 (setq tab-always-indent t)
 (setq c-tab-always-indent t)
 
 (use-package dabbrev
   :config
-  (add-to-list 'dabbrev-ignored-buffer-regexps "\\` ")
+
+  ;;;; this is in the corfu docs, but I don't understand what this means
+  ;; (add-to-list 'dabbrev-ignored-buffer-regexps "\\` ")
+  
   (add-to-list 'dabbrev-ignored-buffer-modes 'doc-view-mode)
   (add-to-list 'dabbrev-ignored-buffer-modes 'pdf-view-mode)
-  (add-to-list 'dabbrev-ignored-buffer-modes 'tags-table-mode))
+  (add-to-list 'dabbrev-ignored-buffer-modes 'tags-table-mode)
+  )
 
-;; tab completion is disabled, direct usage: M-x completion-at-point
-(use-package corfu    ; https://github.com/minad/corfu
+
+(use-package corfu    ;; https://github.com/minad/corfu
   :straight (corfu :files (:defaults "extensions/*")
                    :includes (
                               ;; corfu-info
@@ -1813,9 +1988,15 @@ Containing LEFT, and RIGHT aligned respectively."
   (global-corfu-mode)
   (corfu-popupinfo-mode)
   
-  ;; :bind
-  ;; (:map corfu-map
-  ;;       ("SPC" . corfu-insert-separator))      ; no need for this, when using flex
+  :bind
+  (:map corfu-map
+        ("SPC" . corfu-insert-separator))      ; no need for this, when using flex
+
+  ;; There are two main options for me for completion-styles in orderless configuration below:
+  ;; 1. '(orderless basic) -- lets you input multiple parts of words out of order, separated by space.
+  ;;    The keybinding of a separator is configured in corfu-map above.
+  ;; 2. '(orderless flex) -- lets you avoid space, this is faster to type.
+  ;;     No need for keybinding.
   )
 
 (use-package orderless
@@ -1823,70 +2004,162 @@ Containing LEFT, and RIGHT aligned respectively."
   ;; Configure a custom style dispatcher (see the Consult wiki)
   ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
   ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-  (setq completion-styles '(orderless flex)   ; '(orderless flex) lets you input multiple parts of words out of order, separated by space; flex lets you avoid space, this is faster to type
+  (setq completion-styles '(orderless basic)   ; '(orderless basic) lets you input multiple parts of words out of order, separated by space; flex lets you avoid space, this is faster to type
         completion-category-defaults nil
         completion-category-overrides '((file (styles . (partial-completion))))))
 
-(use-package cape
-  ;; :bind
-  ;; (("C-c p p" . completion-at-point) ;; capf
-  ;;  ("C-c p t" . complete-tag)        ;; etags
-  ;;  ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
-  ;;  ("C-c p h" . cape-history)
-  ;;  ("C-c p f" . cape-file)
-  ;;  ("C-c p k" . cape-keyword)
-  ;;  ("C-c p s" . cape-elisp-symbol)
-  ;;  ("C-c p e" . cape-elisp-block)
-  ;;  ("C-c p a" . cape-abbrev)
-  ;;  ("C-c p l" . cape-line)
-  ;;  ("C-c p w" . cape-dict)
-  ;;  ("C-c p :" . cape-emoji)
-  ;;  ("C-c p \\" . cape-tex)
-  ;;  ("C-c p _" . cape-tex)
-  ;;  ("C-c p ^" . cape-tex)
-  ;;  ("C-c p &" . cape-sgml)
-  ;;  ("C-c p r" . cape-rfc1345))
-  
-  :init
-  (setq cape-dabbrev '(    ; The order of the functions matters, the first function returning a result wins.
-                       ;; Note that the list of buffer-local completion functions takes precedence over the global list.
-                       cape-dabbrev
-                       cape-file
-                       cape-keyword
-                       cape-elisp-symbol
-                       cape-elisp-block
-                       tags-completion-at-point-function
-                       ;; cape-history
-                       ;; cape-tex
-                       ;; cape-sgml
-                       ;; cape-rfc1345
-                       ;; cape-abbrev
-                       ;; cape-dict
-                       ;; cape-line
-                       ))
-  )
+(use-package cape    ; https://github.com/minad/cape
+  :bind
+  (
+   ("C-c p p" . completion-at-point) ;; capf
+   ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+   ("C-c p f" . cape-file)
+   ("C-c p k" . cape-keyword)
+   ("C-c p l" . cape-line)
+   ;;  ("C-c p t" . complete-tag)        ;; etags
+   ;;  ("C-c p s" . cape-elisp-symbol)
+   ;;  ("C-c p e" . cape-elisp-block)
+   ;;  ("C-c p a" . cape-abbrev)
+   ;;  ("C-c p w" . cape-dict)
+   ;;  ("C-c p :" . cape-emoji)
+   ;;  ("C-c p \\" . cape-tex)
+   ;;  ("C-c p _" . cape-tex)
+   ;;  ("C-c p ^" . cape-tex)
+   ;;  ("C-c p &" . cape-sgml)
+   ;;  ("C-c p r" . cape-rfc1345)
+   )
 
-(use-package dumb-jump
+  :init
+  ;; (setq cape-dabbrev '(    ; The order of the functions matters, the first function returning a result wins.
+  ;;                      ;; Note that the list of buffer-local completion functions takes precedence over the global list.
+  ;;                      cape-dabbrev
+  ;;                      tags-completion-at-point-function
+  ;;                      elisp-completion-at-point
+  ;;                      cape-keyword
+  ;;                      cape-elisp-symbol
+  ;;                      ;; cape-file  
+  ;;                      ;; cape-elisp-block
+  ;;                      ;; cape-history
+  ;;                      ;; cape-tex
+  ;;                      ;; cape-sgml
+  ;;                      ;; cape-rfc1345
+  ;;                      ;; cape-abbrev
+  ;;                      ;; cape-dict
+  ;;                      ;; cape-line
+  ;;                      ))
+
+  ;; disabled cape-dabbrev above in favor of super-capf
+  (defun my-cape-super-capf ()
+    (cape-wrap-super
+     #'cape-dabbrev
+     #'cape-keyword
+     #'cape-elisp-symbol
+     #'elisp-completion-at-point
+     #'tags-completion-at-point-function
+     #'cape-line
+     ))
+  (setq-default completion-at-point-functions (list #'my-cape-super-capf))
+
+  ;; Shell buffers redefine completion-at-point-functions with '(comint-completion-at-point).
+  ;; This way regular shell completions work in shell buffers when pressing tab.
+  ;; And with this little workaround my M-tab also works.
+  (defun my/completion-at-point-with-corfu ()
+    (interactive)
+    (let ((completion-at-point-functions (list #'my-cape-super-capf)))
+      (completion-at-point)))
+  (ym-define-key (kbd "M-<tab>") #'my/completion-at-point-with-corfu))      ; corfu is integrated
+
+;; =========================================================
+
+(use-package dumb-jump    ; https://github.com/jacktasia/dumb-jump
   :config
-  (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate t)   ; to the end of list, which means fall back to dumb-jump when there are no better options
+  (add-to-list 'xref-backend-functions 'dumb-jump-xref-activate
+               t)       ; to the end of list, which means fall back to dumb-jump when there are no better options
+  (setq xref-show-definitions-function #'xref-show-definitions-completing-read)
   ;; (setq dumb-jump-force-searcher 'rg)   ; tries searches in this order: git-grep, ag, rg, grep
+  ;; (setq dumb-jump-prefer-searcher 'rg)
+  ;; (setq dumb-jump-git-grep-search-args "")
+  ;; (setq dumb-jump-rg-search-args "")
+  ;; (setq dumb-jump-quiet t)
   ;; (dumb-jump-debug t)   ; try to jump and see *messages*
   )
 
 ;; (setq path-to-ctags "/opt/local/bin/ctags")        https://gist.github.com/kborling/13f2300e60ae4878d5d96f5f4d041664#file-init-el-L414
+
+(setq xref-auto-jump-to-first-xref nil)    ; default: nil
+(setq xref-prompt-for-identifier t)
+
+;; also try https://github.com/universal-ctags/citre
+
+;; TODO: hydra
+
+;; =========================================================
+
+(use-package bm
+         :init
+         (setq bm-restore-repository-on-load t)
+
+         :config
+         (setq bm-highlight-style 'bm-highlight-only-fringe)
+         (setq bm-marker 'bm-marker-left)
+         (setq bm-in-lifo-order t)
+
+         ;; (setq temporary-bookmark-p t)   ; default: nil --- remove bookmark after jump to it by bm-next or bm-previous
+         ;; or (bm-bookmark-add nil nil t)
+         
+         (setq bm-cycle-all-buffers t)
+         (add-hook 'bm-after-goto-hook 'org-bookmark-jump-unhide)
+         (setq bm-repository-file "~/.emacs.d/bm-repository")
+         (setq-default bm-buffer-persistence t)
+
+         (add-hook 'after-init-hook 'bm-repository-load)
+         (add-hook 'kill-buffer-hook #'bm-buffer-save)
+         (add-hook 'kill-emacs-hook #'(lambda nil
+                                          (bm-buffer-save-all)
+                                          (bm-repository-save)))
+
+         ;; The `after-save-hook' is not necessary to use to achieve persistence,
+         ;; but it makes the bookmark data in repository more in sync with the file
+         ;; state.
+         (add-hook 'after-save-hook #'bm-buffer-save)
+
+         (add-hook 'find-file-hooks   #'bm-buffer-restore)
+         (add-hook 'after-revert-hook #'bm-buffer-restore)
+
+         ;; The `after-revert-hook' is not necessary to use to achieve persistence,
+         ;; but it makes the bookmark data in repository more in sync with the file
+         ;; state. This hook might cause trouble when using packages
+         ;; that automatically reverts the buffer (like vc after a check-in).
+         ;; This can easily be avoided if the package provides a hook that is
+         ;; called before the buffer is reverted (like `vc-before-checkin-hook').
+         ;; Then new bookmarks can be saved before the buffer is reverted.
+         ;; Make sure bookmarks is saved before check-in (and revert-buffer)
+         (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+
+         ;; :bind (("<f2>" . bm-next)
+         ;;        ("S-<f2>" . bm-previous)
+         ;;        ("C-<f2>" . bm-toggle))
+
+         ;; usage: M-x bm-show, bm-show-all
+         )
+
+;; TODO: hydra
 
 ;; =========================================================
 
 (use-package embark
   :demand
   :bind
-  (("C-M-." . embark-act)
+  (
+   ;; ("C-M-." . embark-become)
+   ;; ("C-M-." . embark-act)
    ;; ("C-M-;" . embark-dwim)
    ;; ("C-h B" . embark-bindings)
    )
 
   :init
-  (setq prefix-help-command #'embark-prefix-help-command))
+  (setq prefix-help-command #'embark-prefix-help-command)
+  )
 
 ;; =========================================================
 
@@ -1930,34 +2203,36 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
-;; Make help buffers stick by renaming them
+;; Make help buffers stick by cloning and renaming them.
+;; A two step process: first we wait for the buffer to be populated, then read its contents, then clone and rename accordingly.
 
-(defun jue-clone-buffer ()    ; from https://emacs.stackexchange.com/questions/33156/how-can-i-have-multiple-help-buffers-with-different-content
-  "jue clone current buffer. Useful to have multiple help buffers."
-  (interactive)
-  (rename-buffer (generate-new-buffer-name
-                  (concat (buffer-name) " -- "                 ; create name from old name and
-                          (save-excursion                   ; use first word in buffer for new name
-                            (goto-char 0)
-                            (thing-at-point 'symbol t))))
-                 t))                                      ; show cloned buffer now
-(defun m/rename-help-buffer-when-it-is-populated ()    ; for some reason cloning directly in the hook doesn't work, we have to wait
-  (interactive)
-  (run-at-time "100 millisecond" nil #'jue-clone-buffer))
-(add-hook 'help-mode-hook #'m/rename-help-buffer-when-it-is-populated)
+(defun ym/help-buf-clone-and-rename (&optional buffer)    ; from https://emacs.stackexchange.com/questions/33156/how-can-i-have-multiple-help-buffers-with-different-content
+  (let ((buf (if buffer
+                 buffer
+               (current-buffer))))
+    (with-current-buffer buf
+      (rename-buffer (generate-new-buffer-name
+                      (concat (buffer-name) " -- "                 ; create name from old name and
+                              (save-excursion                   ; use first word in buffer for new name
+                                (goto-char 0)
+                                (thing-at-point 'symbol t))))
+                     t))))               ; show cloned buffer now
+
+;; For some reason cloning directly in the hook doesn't work, we have to wait until the help buffer is populated to read it.
+(defun ym/help-buffer-rename-when-populated ()
+  (run-at-time "100 millisecond"     ; a lot, but still not noticeable
+               nil     ; no repeat
+               #'ym/help-buf-clone-and-rename (current-buffer)))
+(add-hook 'help-mode-hook #'ym/help-buffer-rename-when-populated)
 ;; (remove-hook 'help-mode-hook #'m/rename-help-buffer-when-it-is-populated)
 
-;; maybe write the same thing for occur, grep, rg, etc
+;; maybe write the same thing for occur, grep, rg, etc: https://dawranliou.com/blog/xref-with-eglot-and-project/
 
 ;; =========================================================
 
 ;; electric-pair-mode is enough most of the time
 ;; I don't use strict mode and soft deletion from puni and smartparens
 (electric-pair-mode t)    ; insert () together and wrap into parens
-
-(use-package puni
-  ;; No configuration here. I just directly use functions from puni, smartparens, lispy, etc
-  )
 
 (use-package smartparens
   ;; :demand t
@@ -1993,15 +2268,17 @@ Containing LEFT, and RIGHT aligned respectively."
                     :background "grey"         ; was ym-hl-line-color-normal-mode-color
                     )    ; inherited by show-paren-match-expression
 
+;; No configuration here. I just directly use functions from these packages without activating them.
 (use-package expand-region)
 (use-package lispy)
 (use-package symex)
+(use-package puni)
 
 ;; =========================================================
 
 ;; https://demonastery.org/2013/04/emacs-narrow-to-region-indirect/
 ;; https://emacs.stackexchange.com/questions/12180/why-use-indirect-buffers/12185#12185
-(defun narrow-to-region-indirect (start end)
+(defun my/narrow-to-region-indirect (start end)
   "Restrict editing in this buffer to the current region, indirectly."
   (interactive "r")
   (deactivate-mark)
@@ -2014,12 +2291,48 @@ Containing LEFT, and RIGHT aligned respectively."
     (font-lock-fontify-buffer)   ; without this the colors get lost
     ))
 
-;; =========================================================
-
-(load-file (expand-file-name (convert-standard-filename "init-hydra.el") user-emacs-directory))
+;; TODO: hydra
 
 ;; =========================================================
 
+(use-package drag-stuff
+  :config
+  ;; (drag-stuff-mode t)
+  ;; drag-stuff-before-drag-hook
+  ;; drag-stuff-after-drag-hook
+  )
+
+;; drag-stuff-up
+;; drag-stuff-down
+;; drag-stuff-right
+;; drag-stuff-left
+;; drag-stuff-line-up
+;; drag-stuff-line-down
+;; drag-stuff-line-vertically
+;; drag-stuff-lines-up
+;; drag-stuff-lines-down
+;; drag-stuff-lines-vertically
+;; drag-stuff-drag-region-up
+;; drag-stuff-drag-region-down
+;; drag-stuff-whole-lines-region
+;; drag-stuff-region-left
+;; drag-stuff-region-right
+;; drag-stuff-region-horizontally
+;; drag-stuff-word-left
+;; drag-stuff-word-right
+;; drag-stuff-word-horizontally
+
+;; TODO: hydra
+
+;; =========================================================
+
+;; (load-file (expand-file-name (convert-standard-filename "init-hydras.el") user-emacs-directory))
+
+;; =========================================================
+
+(use-package bubbles
+  :straight (:local-repo "~/wurkspaces/emacs-bubbles-wm")
+  )
 
 
 
