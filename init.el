@@ -293,11 +293,11 @@
         (add-to-list 'minor-mode-map-alist mykeys))))
 (ad-activate 'load)
 
-(defun ym-define-key (key func)   ; Not sure if we really need to define keys in both maps, but just in case.
+(defun ym/define-key (key func)   ; Not sure if we really need to define keys in both maps, but just in case.
   (global-set-key key func)
   (define-key ym-keys-minor-mode-map key func))
 
-(defun ym-undefined-key-message () (interactive) (message "undefined keybinding yet, see ym-define-key"))
+(defun ym-undefined-key-message () (interactive) (message "undefined keybinding yet, see ym/define-key"))
 
 ;; -----------------------------------------------
 
@@ -310,7 +310,7 @@
 
 (mapcar
  (lambda (x)
-   (ym-define-key (kbd (concat "s-" (list x)))
+   (ym/define-key (kbd (concat "s-" (list x)))
                   nil))
  (concat
   "abcdefghijklmnopqrstuvwyxz"
@@ -324,7 +324,7 @@
 ;; There was M-s prefix for sorting, but I've never used it. It's easier to remember the names of the functions.
 (mapcar
  (lambda (x)
-   (ym-define-key (kbd (concat "M-" (list x)))
+   (ym/define-key (kbd (concat "M-" (list x)))
                   nil))
  (concat
   "abcdefghijklmnopqrstuvwy"
@@ -337,7 +337,7 @@
 ;; Mac option+keys are translated to these weird characters.
 (mapcar
  (lambda (x)
-   (ym-define-key (kbd (concat "M-s-" (list x)))
+   (ym/define-key (kbd (concat "M-s-" (list x)))
                   nil))
  (concat
   "œ∑´®†¥¨ˆøπ“‘åß∂ƒ©˙∆˚¬…æ«Ω≈ç√∫˜µ≤≥÷"
@@ -349,7 +349,7 @@
 ;; https://unix.stackexchange.com/questions/25649/is-it-possible-to-stop-emacs-from-down-translating-my-key-chords/25719#25719
 (mapcar
  (lambda (x)
-   (ym-define-key (kbd (concat "M-" (list x)))
+   (ym/define-key (kbd (concat "M-" (list x)))
                   #'ym-undefined-key-message))
  (concat
   "ABCDEFGHIJKLMNOPQRSTUVWYXZ"    ; M-S-a doesn't work for some reason, but M-A does
@@ -357,7 +357,7 @@
   "\""
   ))
 
-(ym-define-key (kbd "C-z") nil)    ; I constantly hit this unintentionally.
+(ym/define-key (kbd "C-z") nil)    ; I constantly hit this unintentionally.
 
 ;; https://emacs.stackexchange.com/questions/14755/how-to-remove-bindings-to-the-esc-prefix-key/14759#14759
 ;; Let the escape key do its thing. Yeah, I feel the judgemental stare.
@@ -367,71 +367,71 @@
 
 ;; Also clear combinations involving return, space, backspace, tab, and arrow keys:
 
-(ym-define-key (kbd "<s-return>") nil)
-(ym-define-key (kbd "<M-s-return>") nil)
-(ym-define-key (kbd "<S-s-return>") nil)
-(ym-define-key (kbd "<M-return>") nil)
-(ym-define-key (kbd "<M-S-return>") nil)
-(ym-define-key (kbd "<S-return>") nil)
+(ym/define-key (kbd "<s-return>") nil)
+(ym/define-key (kbd "<M-s-return>") nil)
+(ym/define-key (kbd "<S-s-return>") nil)
+(ym/define-key (kbd "<M-return>") nil)
+(ym/define-key (kbd "<M-S-return>") nil)
+(ym/define-key (kbd "<S-return>") nil)
 
-(ym-define-key (kbd "<s-SPC>") nil)
-(ym-define-key (kbd "M-s-SPC") nil)   ; if this doesn't work, try (kbd "M-s- ")
-(ym-define-key (kbd "<S-s-SPC>") nil)
-(ym-define-key (kbd "<M-SPC>") nil)
-(ym-define-key (kbd "<M-S-SPC>") nil)
-(ym-define-key (kbd "<S-SPC>") nil)
+(ym/define-key (kbd "<s-SPC>") nil)
+(ym/define-key (kbd "M-s-SPC") nil)   ; if this doesn't work, try (kbd "M-s- ")
+(ym/define-key (kbd "<S-s-SPC>") nil)
+(ym/define-key (kbd "<M-SPC>") nil)
+(ym/define-key (kbd "<M-S-SPC>") nil)
+(ym/define-key (kbd "<S-SPC>") nil)
 
-(ym-define-key (kbd "<s-backspace>") nil)
-(ym-define-key (kbd "<M-s-backspace>") nil)
-(ym-define-key (kbd "<S-s-backspace>") nil)
-(ym-define-key (kbd "<M-backspace>") nil)
-(ym-define-key (kbd "<M-S-backspace>") nil)
-(ym-define-key (kbd "<S-backspace>") nil)
+(ym/define-key (kbd "<s-backspace>") nil)
+(ym/define-key (kbd "<M-s-backspace>") nil)
+(ym/define-key (kbd "<S-s-backspace>") nil)
+(ym/define-key (kbd "<M-backspace>") nil)
+(ym/define-key (kbd "<M-S-backspace>") nil)
+(ym/define-key (kbd "<S-backspace>") nil)
 
-(ym-define-key (kbd "<s-up>") nil)
-(ym-define-key (kbd "<s-down>") nil)
-(ym-define-key (kbd "<s-left>") nil)
-(ym-define-key (kbd "<s-right>") nil)
-(ym-define-key (kbd "<M-up>") nil)
-(ym-define-key (kbd "<M-down>") nil)
-(ym-define-key (kbd "<M-left>") nil)
-(ym-define-key (kbd "<M-right>") nil)
-(ym-define-key (kbd "<M-s-up>") nil)
-(ym-define-key (kbd "<M-s-down>") nil)
-(ym-define-key (kbd "<M-s-left>") nil)
-(ym-define-key (kbd "<M-s-right>") nil)
-(ym-define-key (kbd "<S-s-up>") nil)
-(ym-define-key (kbd "<S-s-down>") nil)
-(ym-define-key (kbd "<S-s-left>") nil)
-(ym-define-key (kbd "<S-s-right>") nil)
-(ym-define-key (kbd "<S-M-up>") nil)
-(ym-define-key (kbd "<S-M-down>") nil)
-(ym-define-key (kbd "<S-M-left>") nil)
-(ym-define-key (kbd "<S-M-right>") nil)
+(ym/define-key (kbd "<s-up>") nil)
+(ym/define-key (kbd "<s-down>") nil)
+(ym/define-key (kbd "<s-left>") nil)
+(ym/define-key (kbd "<s-right>") nil)
+(ym/define-key (kbd "<M-up>") nil)
+(ym/define-key (kbd "<M-down>") nil)
+(ym/define-key (kbd "<M-left>") nil)
+(ym/define-key (kbd "<M-right>") nil)
+(ym/define-key (kbd "<M-s-up>") nil)
+(ym/define-key (kbd "<M-s-down>") nil)
+(ym/define-key (kbd "<M-s-left>") nil)
+(ym/define-key (kbd "<M-s-right>") nil)
+(ym/define-key (kbd "<S-s-up>") nil)
+(ym/define-key (kbd "<S-s-down>") nil)
+(ym/define-key (kbd "<S-s-left>") nil)
+(ym/define-key (kbd "<S-s-right>") nil)
+(ym/define-key (kbd "<S-M-up>") nil)
+(ym/define-key (kbd "<S-M-down>") nil)
+(ym/define-key (kbd "<S-M-left>") nil)
+(ym/define-key (kbd "<S-M-right>") nil)
 
-;; (ym-define-key (kbd "<S-up>") nil)     ; these four are used by org-mode
-;; (ym-define-key (kbd "<S-down>") nil)
-;; (ym-define-key (kbd "<S-left>") nil)
-;; (ym-define-key (kbd "<S-right>") nil)
+;; (ym/define-key (kbd "<S-up>") nil)     ; these four are used by org-mode
+;; (ym/define-key (kbd "<S-down>") nil)
+;; (ym/define-key (kbd "<S-left>") nil)
+;; (ym/define-key (kbd "<S-right>") nil)
 
-(ym-define-key (kbd "<M-tab>") nil)
-(ym-define-key (kbd "<C-tab>") nil)
-(ym-define-key (kbd "<C-M-tab>") nil)
-(ym-define-key (kbd "<M-s-tab>") nil)
+(ym/define-key (kbd "<M-tab>") nil)
+(ym/define-key (kbd "<C-tab>") nil)
+(ym/define-key (kbd "<C-M-tab>") nil)
+(ym/define-key (kbd "<M-s-tab>") nil)
 (progn
-  (ym-define-key (kbd "<s-tab>") nil)   ; = cmd-tab, binding is useless
-  (ym-define-key (kbd "<S-s-tab>") nil))   ; = cmd-tab, binding is useless
+  (ym/define-key (kbd "<s-tab>") nil)   ; = cmd-tab, binding is useless
+  (ym/define-key (kbd "<S-s-tab>") nil))   ; = cmd-tab, binding is useless
 (progn
-  (ym-define-key (kbd "C-S-<tab>") nil)     ; these two should be the same keybinding
-  (ym-define-key (kbd "C-S-<iso-lefttab>") nil))
+  (ym/define-key (kbd "C-S-<tab>") nil)     ; these two should be the same keybinding
+  (ym/define-key (kbd "C-S-<iso-lefttab>") nil))
 (progn
-  (ym-define-key (kbd "<M-S-tab>") nil)
-  (ym-define-key (kbd "<M-S-iso-lefttab>") nil))
+  (ym/define-key (kbd "<M-S-tab>") nil)
+  (ym/define-key (kbd "<M-S-iso-lefttab>") nil))
 
-;; (ym-define-key (kbd "<backtab>") nil)   ; = <S-tab>, it is probably used by org-mode.
+;; (ym/define-key (kbd "<backtab>") nil)   ; = <S-tab>, it is probably used by org-mode.
 
 ;; M-S-- doesn't work, because alt+shift toggles layout.
-;; (ym-define-key (kbd "M-_") (lambda () (interactive) (insert "—")))
+;; (ym/define-key (kbd "M-_") (lambda () (interactive) (insert "—")))
 
 ;; =========================================================
 
@@ -451,14 +451,14 @@
 (advice-add 'handle-shift-selection :around 'ym/advice-handle-shift-selection)
 ;; (advice-remove 'handle-shift-selection 'ym/advice-handle-shift-selection)
 
-(ym-define-key (kbd "s-z") #'undo)
-(ym-define-key (kbd "s-x")
+(ym/define-key (kbd "s-z") #'undo)
+(ym/define-key (kbd "s-x")
                (lambda (beg end)
                  (interactive "r")
                  (prog1
                      (kill-region beg end)
                    (setq deactivate-mark nil))))   ; leave the region highlighted after the cut
-(ym-define-key (kbd "s-c")
+(ym/define-key (kbd "s-c")
                (lambda (beg end)
                  (interactive "r")
                  (prog1
@@ -490,39 +490,39 @@
     ;; (set-mark point-before)
     (push-mark point-before t)
     ))
-(ym-define-key (kbd "s-v") #'yank-for-indent)
-(ym-define-key (kbd "S-<insert>") #'yank-for-indent)    ; clipboard managers do this
+(ym/define-key (kbd "s-v") #'yank-for-indent)
+(ym/define-key (kbd "S-<insert>") #'yank-for-indent)    ; clipboard managers do this
 
 ;; =========================================================
 
-(ym-define-key (kbd "s-i") 'previous-line)
-(ym-define-key (kbd "s-k") 'next-line)
-(ym-define-key (kbd "s-j") 'backward-char)
-(ym-define-key (kbd "s-l") 'forward-char)
+(ym/define-key (kbd "s-i") 'previous-line)
+(ym/define-key (kbd "s-k") 'next-line)
+(ym/define-key (kbd "s-j") 'backward-char)
+(ym/define-key (kbd "s-l") 'forward-char)
 
 ;; mwim = move where I mean
 ;; https://github.com/alezost/mwim.el
 (use-package mwim
   :config
-  (ym-define-key (kbd "s-u") #'mwim-beginning-of-code-or-line)    ; I used to have custom functions for this, see git history
-  (ym-define-key (kbd "s-o") #'mwim-end))
+  (ym/define-key (kbd "s-u") #'mwim-beginning-of-code-or-line)    ; I used to have custom functions for this, see git history
+  (ym/define-key (kbd "s-o") #'mwim-end))
 
-(ym-define-key (kbd "s-s") (lambda () (interactive) (ignore-error 'user-error (windmove-left))))
-(ym-define-key (kbd "s-d") (lambda () (interactive) (ignore-error 'user-error (windmove-down))))
-(ym-define-key (kbd "s-f") (lambda () (interactive) (ignore-error 'user-error (windmove-right))))
-(ym-define-key (kbd "s-e") (lambda () (interactive) (ignore-error 'user-error (windmove-up))))
+(ym/define-key (kbd "s-s") (lambda () (interactive) (ignore-error 'user-error (windmove-left))))
+(ym/define-key (kbd "s-d") (lambda () (interactive) (ignore-error 'user-error (windmove-down))))
+(ym/define-key (kbd "s-f") (lambda () (interactive) (ignore-error 'user-error (windmove-right))))
+(ym/define-key (kbd "s-e") (lambda () (interactive) (ignore-error 'user-error (windmove-up))))
 
 (use-package buffer-move)
-(ym-define-key (kbd "s-S") (lambda () (interactive) (ignore-error 'error (buf-move-left))))
-(ym-define-key (kbd "s-D") (lambda () (interactive) (ignore-error 'error (buf-move-down))))
-(ym-define-key (kbd "s-F") (lambda () (interactive) (ignore-error 'error (buf-move-right))))
-(ym-define-key (kbd "s-E") (lambda () (interactive) (ignore-error 'error (buf-move-up))))
+(ym/define-key (kbd "s-S") (lambda () (interactive) (ignore-error 'error (buf-move-left))))
+(ym/define-key (kbd "s-D") (lambda () (interactive) (ignore-error 'error (buf-move-down))))
+(ym/define-key (kbd "s-F") (lambda () (interactive) (ignore-error 'error (buf-move-right))))
+(ym/define-key (kbd "s-E") (lambda () (interactive) (ignore-error 'error (buf-move-up))))
 
-(ym-define-key (kbd "s-w") (lambda () (interactive) (ignore-error 'user-error (tab-bar-switch-to-prev-tab))))
-(ym-define-key (kbd "s-r") (lambda () (interactive) (ignore-error 'user-error (tab-bar-switch-to-next-tab))))
+(ym/define-key (kbd "s-w") (lambda () (interactive) (ignore-error 'user-error (tab-bar-switch-to-prev-tab))))
+(ym/define-key (kbd "s-r") (lambda () (interactive) (ignore-error 'user-error (tab-bar-switch-to-next-tab))))
 
-(ym-define-key (kbd "s-W") (lambda () (interactive) (tab-bar-move-tab -1)))
-(ym-define-key (kbd "s-R") (lambda () (interactive) (tab-bar-move-tab 1)))
+(ym/define-key (kbd "s-W") (lambda () (interactive) (tab-bar-move-tab -1)))
+(ym/define-key (kbd "s-R") (lambda () (interactive) (tab-bar-move-tab 1)))
 
 (defvar ym/toggle-single-window-last-wc nil)
 (defun ym/toggle-single-window ()
@@ -535,12 +535,12 @@
       (set-window-configuration ym/toggle-single-window-last-wc)
       (setq ym/toggle-single-window-last-wc nil))))
 
-(ym-define-key (kbd "s-!") (lambda () (interactive) (ignore-error 'error (delete-window))))
-(ym-define-key (kbd "s-1") 'ym/toggle-single-window)
-(ym-define-key (kbd "s-@") (lambda () (interactive) (ignore-error 'error (split-window-below))))
-(ym-define-key (kbd "s-#") (lambda () (interactive) (ignore-error 'error (split-window-right))))
-(ym-define-key (kbd "s-2") 'tab-bar-history-back)
-(ym-define-key (kbd "s-3") 'tab-bar-history-forward)
+(ym/define-key (kbd "s-!") (lambda () (interactive) (ignore-error 'error (delete-window))))
+(ym/define-key (kbd "s-1") 'ym/toggle-single-window)
+(ym/define-key (kbd "s-@") (lambda () (interactive) (ignore-error 'error (split-window-below))))
+(ym/define-key (kbd "s-#") (lambda () (interactive) (ignore-error 'error (split-window-right))))
+(ym/define-key (kbd "s-2") 'tab-bar-history-back)
+(ym/define-key (kbd "s-3") 'tab-bar-history-forward)
 
 ;; =========================================================
 
@@ -795,14 +795,14 @@ there's a region, all lines that region covers will be duplicated."
                                           ))   ; comment this block if removing whitespaces only is annoying
                         ))))
 
-(ym-define-key (kbd "s-S-<backspace>") #'ym/delete-current-line-or-region)
-(ym-define-key (kbd "s-M-x") #'ym/kill-current-line-or-region)
-(ym-define-key (kbd "s-M-c") #'ym/copy-current-line-or-region)
-(ym-define-key (kbd "s-/") #'ym/comment-or-uncomment-line-or-region)
-(ym-define-key (kbd "M-s-/") #'ym/duplicate-and-comment-current-line-or-region)
-(ym-define-key (kbd "M-d") #'ym/duplicate-current-line-or-region)
-(ym-define-key (kbd "<M-backspace>") #'ym/backward-kill-word)
-(ym-define-key (kbd "<s-backspace>") #'ym/backward-kill-word)
+(ym/define-key (kbd "s-S-<backspace>") #'ym/delete-current-line-or-region)
+(ym/define-key (kbd "s-M-x") #'ym/kill-current-line-or-region)
+(ym/define-key (kbd "s-M-c") #'ym/copy-current-line-or-region)
+(ym/define-key (kbd "s-/") #'ym/comment-or-uncomment-line-or-region)
+(ym/define-key (kbd "M-s-/") #'ym/duplicate-and-comment-current-line-or-region)
+(ym/define-key (kbd "M-d") #'ym/duplicate-current-line-or-region)
+(ym/define-key (kbd "<M-backspace>") #'ym/backward-kill-word)
+(ym/define-key (kbd "<s-backspace>") #'ym/backward-kill-word)
 
 (use-package drag-stuff
   :config
@@ -862,8 +862,8 @@ there's a region, all lines that region covers will be duplicated."
 
 (defun my/scroll-page-up ()   (interactive) (my/scroll-page-command (- (window-body-height))))
 (defun my/scroll-page-down () (interactive) (my/scroll-page-command (+ (window-body-height))))
-(ym-define-key (kbd "s-m") #'my/scroll-page-up)
-(ym-define-key (kbd "s-n") #'my/scroll-page-down)
+(ym/define-key (kbd "s-m") #'my/scroll-page-up)
+(ym/define-key (kbd "s-n") #'my/scroll-page-down)
 
 (defun my/scroll-a-little-command (n-lines)
   (interactive)
@@ -892,8 +892,8 @@ there's a region, all lines that region covers will be duplicated."
 
 (defun my/scroll-a-little-up ()   (interactive) (my/scroll-a-little-command (- (/ (window-body-height) 5))))
 (defun my/scroll-a-little-down () (interactive) (my/scroll-a-little-command (+ (/ (window-body-height) 5))))
-(ym-define-key (kbd "s-.") #'my/scroll-a-little-up)    ; used to be just 3, independently of window-body-height
-(ym-define-key (kbd "s-,") #'my/scroll-a-little-down)
+(ym/define-key (kbd "s-.") #'my/scroll-a-little-up)    ; used to be just 3, independently of window-body-height
+(ym/define-key (kbd "s-,") #'my/scroll-a-little-down)
 
 ;; =========================================================
 
@@ -914,8 +914,8 @@ there's a region, all lines that region covers will be duplicated."
       )))
 (defun ym-search-selection-or-isearch-forward ()   (interactive) (ym-search-selection-or-isearch t))
 (defun ym-search-selection-or-isearch-backward ()  (interactive) (ym-search-selection-or-isearch nil))
-;; (ym-define-key (kbd "s-s") 'ym-search-selection-or-isearch-forward)
-;; (ym-define-key (kbd "s-r") 'ym-search-selection-or-isearch-backward)
+;; (ym/define-key (kbd "s-s") 'ym-search-selection-or-isearch-forward)
+;; (ym/define-key (kbd "s-r") 'ym-search-selection-or-isearch-backward)
 ;; (define-key isearch-mode-map (kbd "s-s") 'isearch-repeat-forward)
 ;; (define-key isearch-mode-map (kbd "s-r") 'isearch-repeat-backward)
 
@@ -982,10 +982,10 @@ there's a region, all lines that region covers will be duplicated."
   ;; just in case: (advice-remove 'avy-jump #'avy-jump-advice--hide-cursor-temporarily)
 
   (define-key isearch-mode-map (kbd "s-;") 'avy-isearch)
-  (ym-define-key (kbd "s-;") #'avy-goto-word-1)
-  ;; (ym-define-key (kbd "s-;") #'avy-goto-word-2)
-  ;; (ym-define-key (kbd "s-;") #'avy-goto-char-timer)
-  ;; (ym-define-key (kbd "s-^") #'avy-goto-parens)   ; "S-s-;" -- this is not a usual ^, it's a unicode character
+  (ym/define-key (kbd "s-;") #'avy-goto-word-1)
+  ;; (ym/define-key (kbd "s-;") #'avy-goto-word-2)
+  ;; (ym/define-key (kbd "s-;") #'avy-goto-char-timer)
+  ;; (ym/define-key (kbd "s-^") #'avy-goto-parens)   ; "S-s-;" -- this is not a usual ^, it's a unicode character
 
   :custom-face
   (avy-lead-face   ((t (:foreground "white" :background "#dc9656"))))
@@ -1100,8 +1100,8 @@ there's a region, all lines that region covers will be duplicated."
    ;; ido-sort-mtime-tramp-files-at-end nil
    ))
 
-(ym-define-key (kbd "s-b") #'ido-switch-buffer)
-(ym-define-key (kbd "s-B") #'ibuffer)
+(ym/define-key (kbd "s-b") #'ido-switch-buffer)
+(ym/define-key (kbd "s-B") #'ibuffer)
 (global-set-key [remap list-buffers] 'ibuffer)
 
 ;; =========================================================
@@ -1797,8 +1797,6 @@ Containing LEFT, and RIGHT aligned respectively."
    )
   )
 
-;; TODO: hydra
-
 ;; =========================================================
 
 (setq global-hl-line-sticky-flag nil)   ; only appear in one window
@@ -2107,7 +2105,7 @@ Containing LEFT, and RIGHT aligned respectively."
     (interactive)
     (let ((completion-at-point-functions (list #'my-cape-super-capf)))
       (completion-at-point)))
-  (ym-define-key (kbd "M-<tab>") #'my/completion-at-point-with-corfu))      ; corfu is integrated
+  (ym/define-key (kbd "M-<tab>") #'my/completion-at-point-with-corfu))      ; corfu is integrated
 
 ;; =========================================================
 
@@ -2152,6 +2150,8 @@ Containing LEFT, and RIGHT aligned respectively."
          (setq bm-repository-file "~/.emacs.d/bm-repository")
          (setq-default bm-buffer-persistence t)
 
+         (setq bm-electric-show nil)    ; default: t --- but this didn't work for me for some reason
+
          (add-hook 'after-init-hook 'bm-repository-load)
          (add-hook 'kill-buffer-hook #'bm-buffer-save)
          (add-hook 'kill-emacs-hook #'(lambda nil
@@ -2191,7 +2191,7 @@ Containing LEFT, and RIGHT aligned respectively."
   :demand
   :bind
   (
-   ;; ("C-M-." . embark-become)
+   ("C-M-." . embark-become)
    ;; ("C-M-." . embark-act)
    ;; ("C-M-;" . embark-dwim)
    ;; ("C-h B" . embark-bindings)
@@ -2309,10 +2309,18 @@ Containing LEFT, and RIGHT aligned respectively."
                     )    ; inherited by show-paren-match-expression
 
 ;; No configuration here. I just directly use functions from these packages without activating them.
-(use-package expand-region)
 (use-package lispy)
 (use-package symex)
 (use-package puni)
+
+;; =========================================================
+
+(use-package expand-region)
+
+(ym/define-key (kbd "M-e") #'er/expand-region)
+(ym/define-key (kbd "M-r") #'er/contract-region)
+
+(ym/define-key (kbd "M-w") #'exchange-point-and-mark)
 
 ;; =========================================================
 
@@ -2333,7 +2341,7 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
-(pretty-hydra-define hydra-aaa ()
+(pretty-hydra-define hydra-1 ()
   (
    ""
    (
@@ -2344,10 +2352,30 @@ Containing LEFT, and RIGHT aligned respectively."
 
     ("m" m/mode-line-short :exit t)
     ("n" m/narrow-to-region-indirect :exit t)
+
+
     )
    ))
 
-(global-set-key (kbd "M-a") 'hydra-aaa/body)
+(ym/define-key (kbd "M-a") #'hydra-1/body)
+
+(pretty-hydra-define hydra-2 ()
+  (
+   ""
+   (
+    (" " bm-next :exit nil)
+    (" " bm-previous :exit nil)
+    ("b" bm-toggle :exit t)
+    ("v" bm-show :exit t)
+    ("V" bm-show-all :exit t)
+
+    ("s-f" org-ctrl-c-ctrl-c :exit t)      ; Which is C-a C-f. Could be C-a C-a, but just a precaution.
+
+    ("c" m/toggle-color-of-comments :exit nil)
+    )
+   ))
+
+(ym/define-key (kbd "s-a") #'hydra-2/body)
 
 ;; =========================================================
 
