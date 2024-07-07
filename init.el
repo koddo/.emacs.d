@@ -878,7 +878,10 @@ there's a region, all lines that region covers will be duplicated."
          (next-screen-line-is-out-of-range (or (< next-screen-line (line-number-at-pos (beginning-of-buffer)))
                                                (> next-screen-line (line-number-at-pos (end-of-buffer)))))
          (fallback-to-builtin-scroll-command #'scroll-up-command))
-    (if next-screen-line-is-out-of-range
+    (if (or next-screen-line-is-out-of-range
+            ;; (> 1 (+ (line-number-at-pos (window-start))
+            ;;         n-lines))
+            )
         (funcall fallback-to-builtin-scroll-command
                  n-lines)
       (goto-line next-screen-line)
