@@ -1257,6 +1257,7 @@ there's a region, all lines that region covers will be duplicated."
   (setq org-link-descriptive nil)   ; shows links as is, e.g., [[http://example.com][example]], doesn't collapse to just example
   (setq org-cycle-separator-lines 0)    ; number of blank lines between trees when folded, default: 2; set it to -1 to preserve all whitespace; mine is set to 0 to have more content on screen
   (setq org-fontify-quote-and-verse-blocks t)   ; otherwise they are not highlighted
+  (setq org-tags-column 40)
   ;; (setq org-refile-targets '((org-agenda-files :maxlevel . 3)))    ; (setq org-refile-targets '(("~/werk" :maxlevel . 3)))
 
   ;; strike-though text color in org-mode
