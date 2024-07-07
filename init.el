@@ -876,14 +876,8 @@ there's a region, all lines that region covers will be duplicated."
       (setq my/scroll-command---point-before-scrolling (point))))
   (let* ((next-screen-line (+ my/scroll-command---virtual-cur-line n-lines))
          (next-screen-line-is-out-of-range (or (< next-screen-line (line-number-at-pos (beginning-of-buffer)))
-                                               (> next-screen-line (line-number-at-pos (end-of-buffer)))))
-         (fallback-to-builtin-scroll-command #'scroll-up-command))
-    (if (or next-screen-line-is-out-of-range
-            ;; (> 1 (+ (line-number-at-pos (window-start))
-            ;;         n-lines))
-            )
-        (funcall fallback-to-builtin-scroll-command
-                 n-lines)
+                                               (> next-screen-line (line-number-at-pos (end-of-buffer))))))
+    (unless next-screen-line-is-out-of-range
       (goto-line next-screen-line)
       (recenter my/scroll-command---n-lines-from-top)
       (setq my/scroll-command---virtual-cur-line next-screen-line)
