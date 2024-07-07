@@ -875,8 +875,8 @@ there's a region, all lines that region covers will be duplicated."
       (setq my/scroll-command---column-before-scrolling (current-column))
       (setq my/scroll-command---point-before-scrolling (point))))
   (let* ((next-screen-line (+ my/scroll-command---virtual-cur-line n-lines))
-         (next-screen-line-is-out-of-range (or (< next-screen-line (line-number-at-pos (beginning-of-buffer)))
-                                               (> next-screen-line (line-number-at-pos (end-of-buffer))))))
+         (next-screen-line-is-out-of-range (or (< next-screen-line (line-number-at-pos (point-min)))
+                                               (> next-screen-line (line-number-at-pos (point-max))))))
     (unless next-screen-line-is-out-of-range
       (goto-line next-screen-line)
       (recenter my/scroll-command---n-lines-from-top)
