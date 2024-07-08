@@ -874,14 +874,29 @@ there's a region, all lines that region covers will be duplicated."
       (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start))))
       (setq my/scroll-command---column-before-scrolling (current-column))
       (setq my/scroll-command---point-before-scrolling (point))))
+
   (let* ((next-screen-line (+ my/scroll-command---virtual-cur-line n-lines))
          (next-screen-line-is-out-of-range (or (< next-screen-line (line-number-at-pos (point-min)))
                                                (> next-screen-line (line-number-at-pos (point-max))))))
+
+    
+    (when next-screen-line-is-out-of-range
+      (setq my/scroll-command---n-lines-from-top (- my/scroll-command---n-lines-from-top n-lines)))
+
+
     (unless next-screen-line-is-out-of-range
       (goto-line next-screen-line)
-      (recenter my/scroll-command---n-lines-from-top)
       (setq my/scroll-command---virtual-cur-line next-screen-line)
-      (move-to-column my/scroll-command---column-before-scrolling)))
+      (move-to-column my/scroll-command---column-before-scrolling)
+      ;; (message "my/scroll-command---n-lines-from-top : %s" my/scroll-command---n-lines-from-top)
+      )
+
+    (recenter my/scroll-command---n-lines-from-top)
+     
+    )
+  
+  ;; )
+  
   (let ((point-before-scrolling-is-visible-after-recenter
          (and (<= (line-number-at-pos (window-start)) (line-number-at-pos my/scroll-command---point-before-scrolling))
               (<= (line-number-at-pos my/scroll-command---point-before-scrolling) (line-number-at-pos (window-end nil t))))))
@@ -889,6 +904,10 @@ there's a region, all lines that region covers will be duplicated."
       (goto-char my/scroll-command---point-before-scrolling)
       (setq my/scroll-command---virtual-cur-line (line-number-at-pos my/scroll-command---point-before-scrolling))
       (setq my/scroll-command---n-lines-from-top (- my/scroll-command---virtual-cur-line (line-number-at-pos (window-start)))))))
+
+
+
+
 
 (defun my/scroll-a-little-up ()   (interactive) (my/scroll-a-little-command (- (/ (window-body-height) 5))))
 (defun my/scroll-a-little-down () (interactive) (my/scroll-a-little-command (+ (/ (window-body-height) 5))))
