@@ -1,3 +1,6 @@
 
+LD_PRELOAD= LOCALE_ARCHIVE=/usr/lib/locale/locale-archive nix-shell -p emacs
+
+emacs --with-profile new
 
 
