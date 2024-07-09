@@ -1862,9 +1862,10 @@ Containing LEFT, and RIGHT aligned respectively."
                       "~/workspaces"
                       ))
                (w-subdirs (append
-                           (f-directories "~/" (lambda (dir) (s-matches? "\/\.emacs\.d.*$" dir)))
-                           (f-directories "~/workspaces" (lambda (dir) (not (f-hidden-p dir 'last))))
-                           (f-directories "~/wurkspaces" (lambda (dir) (not (f-hidden-p dir 'last))))))
+                           (ignore-errors (f-directories "~/" (lambda (dir) (s-matches? "\/\.emacs\.d.*$" dir))))
+                           (ignore-errors (f-directories "~/wo" (lambda (dir) (not (f-hidden-p dir 'last)))))
+                           (ignore-errors (f-directories "~/wu" (lambda (dir) (not (f-hidden-p dir 'last)))))
+                           ))
                (w-subdirs-relative-to-home (mapcar (lambda (d) (f-short d))    ; I'd like to see the ~/ in front of dirs in the list
                                                    w-subdirs))
                (my-dirs (append dirs w-subdirs-relative-to-home)))
@@ -2403,8 +2404,10 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
-(use-package bubbles
-  :straight (:local-repo "~/wurkspaces/emacs-bubbles-wm")
+(ignore-errors
+  (use-package bubbles
+    :straight (:local-repo "~/wu/emacs-bubbles-wmm")
+    )
   )
 
 
