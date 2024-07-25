@@ -879,9 +879,10 @@ there's a region, all lines that region covers will be duplicated."
          (next-screen-line-is-out-of-range (or (< next-screen-line (line-number-at-pos (point-min)))
                                                (> next-screen-line (line-number-at-pos (point-max))))))
 
-    
-    (when next-screen-line-is-out-of-range
-      (setq my/scroll-command---n-lines-from-top (- my/scroll-command---n-lines-from-top n-lines)))
+
+    ;;; we have to reconcile the following with setting this var after this block
+    ;; (when next-screen-line-is-out-of-range
+    ;;   (setq my/scroll-command---n-lines-from-top (- my/scroll-command---n-lines-from-top n-lines)))
 
 
     (unless next-screen-line-is-out-of-range
@@ -1276,6 +1277,8 @@ there's a region, all lines that region covers will be duplicated."
   (setq org-tags-column 40)
   ;; (setq org-refile-targets '((org-agenda-files :maxlevel . 3)))    ; (setq org-refile-targets '(("~/werk" :maxlevel . 3)))
 
+  (setq org-agenda-files '("~/werk"))
+  
   ;; strike-though text color in org-mode
   (progn
     ;; wrapping lines with +- and -+
@@ -1295,25 +1298,7 @@ there's a region, all lines that region covers will be duplicated."
 ;; why can't I do (require 'org-checklist) without this?
 (use-package org-contrib)
 
-(with-eval-after-load 'base16-theme
-  (with-eval-after-load 'org
-    ;; to customize further, first do M-x describe-text-properties, then the following
-    (set-face-attribute 'org-special-keyword nil :foreground (plist-get ym-base16-colors-darker :base03))    ; base03 is for comments
-    (set-face-attribute 'org-drawer nil :foreground (plist-get ym-base16-colors-darker :base03))
-    (set-face-attribute 'org-date   nil :foreground (plist-get ym-base16-colors-darker :base03))
-    (set-face-attribute 'org-hide   nil :foreground "grey80")
-    (set-face-attribute 'org-block-begin-line  nil :foreground "grey50" :background "grey95")    ; org-block-end-line inherits this
-    (set-face-attribute 'org-block             nil :foreground "grey50" :background "grey95")
-    (let ((f "#5c69cc"))
-      (set-face-attribute 'org-level-1 nil :height 5.0 :foreground f)  ; "#ae1200"
-      (set-face-attribute 'org-level-2 nil :height 3.0 :foreground f)
-      (set-face-attribute 'org-level-3 nil :height 1.5 :foreground f)
-      (set-face-attribute 'org-level-4 nil :height 1.0 :foreground f)
-      (set-face-attribute 'org-level-5 nil :height 1.0 :foreground f)
-      (set-face-attribute 'org-level-6 nil :height 1.0 :foreground f)
-      (set-face-attribute 'org-level-7 nil :height 1.0 :foreground f)
-      (set-face-attribute 'org-level-8 nil :height 1.0 :foreground f)
-      )))
+(use-package org-ql)
 
 ;; =========================================================
 
@@ -1561,6 +1546,26 @@ there's a region, all lines that region covers will be duplicated."
     (enable-theme 'ym-base16-theme)
     )
   )
+
+(with-eval-after-load 'org
+  (with-eval-after-load 'base16-theme
+    ;; to customize further, first do M-x describe-text-properties, then the following
+    (set-face-attribute 'org-special-keyword nil :foreground (plist-get ym-base16-colors-darker :base03))    ; base03 is for comments
+    (set-face-attribute 'org-drawer nil :foreground (plist-get ym-base16-colors-darker :base03))
+    (set-face-attribute 'org-date   nil :foreground (plist-get ym-base16-colors-darker :base03))
+    (set-face-attribute 'org-hide   nil :foreground "grey80")
+    (set-face-attribute 'org-block-begin-line  nil :foreground "grey50" :background "grey95")    ; org-block-end-line inherits this
+    (set-face-attribute 'org-block             nil :foreground "grey50" :background "grey95")
+    (let ((f "#5c69cc"))
+      (set-face-attribute 'org-level-1 nil :height 5.0 :foreground f)  ; "#ae1200"
+      (set-face-attribute 'org-level-2 nil :height 3.0 :foreground f)
+      (set-face-attribute 'org-level-3 nil :height 1.5 :foreground f)
+      (set-face-attribute 'org-level-4 nil :height 1.0 :foreground f)
+      (set-face-attribute 'org-level-5 nil :height 1.0 :foreground f)
+      (set-face-attribute 'org-level-6 nil :height 1.0 :foreground f)
+      (set-face-attribute 'org-level-7 nil :height 1.0 :foreground f)
+      (set-face-attribute 'org-level-8 nil :height 1.0 :foreground f)
+      )))
 
 (defun m/toggle-color-of-comments ()
   (interactive)
@@ -2397,6 +2402,45 @@ Containing LEFT, and RIGHT aligned respectively."
    ))
 
 (ym/define-key (kbd "s-a") #'hydra-2/body)
+
+
+(pretty-hydra-define hydra-f1 (:exit t)
+  (
+   "ccc" (("7" (lambda () (interactive)
+		 (org-ql-search "~/werk/English.org" '(tags "drill") :sort 'date)
+		 (delete-other-windows)
+		 )
+	   "english")
+	  ("8" (lambda () (interactive)
+		 (org-ql-search "~/werk/Spanish.org" '(tags "drill") :sort 'date)
+		 (delete-other-windows)
+		 )
+	   "spanish")
+	  ("9" (lambda () (interactive)
+		 (org-ql-search (org-agenda-files) '(and (tags "clojure") (tags "drill" "drilltodo")) :sort 'date)
+		 (delete-other-windows)
+		 )
+	   "clojure")
+	  ("u" (lambda () (interactive)
+		 (org-ql-search (org-agenda-files) '(and (tags "drill" "drilltodo") (not (tags "english" "spanish" "humor"))) :sort '(date))
+		 (delete-other-windows)
+		 )
+	   "drill and drilltodo")
+	  ("i" (lambda () (interactive)
+		 (org-ql-search (org-agenda-files) '(and (tags "drilltodo") (not (tags "english" "spanish" "humor"))) :sort '(date))
+		 (delete-other-windows)
+		 )
+	   "drilltodo only")
+	  ("o" (lambda () (interactive)
+		     (let ((tt (read-string "drill tag: "))
+                   (org-agenda-files '("~/werk")))
+               (org-ql-search (org-agenda-files) `(and (tags "drill") (tags ,tt) (not (tags "english" "spanish" "humor"))) :sort '(date))
+		       (delete-other-windows)))
+	   "drill only")
+
+	  )
+   ))
+(ym/define-key (kbd "<f1>") #'hydra-f1/body)
 
 ;; =========================================================
 
