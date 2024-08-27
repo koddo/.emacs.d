@@ -917,6 +917,13 @@ there's a region, all lines that region covers will be duplicated."
 
 ;; =========================================================
 
+(setq text-scale-mode-step 1.1)
+(ym/define-key (kbd "s--") #'text-scale-decrease)
+(ym/define-key (kbd "s-=") #'text-scale-increase)
+(ym/define-key (kbd "s-0") (lambda () (interactive) (text-scale-adjust 0)))
+
+;; =========================================================
+
 (setq isearch-repeat-on-direction-change nil)   ; I like it to go into search mode first before searching
 (defun ym-search-selection-or-isearch (forward)
   (interactive)
@@ -1763,7 +1770,7 @@ Containing LEFT, and RIGHT aligned respectively."
     (walk-windows (lambda (w)
                     (cond 
                      ((eq (window-buffer w) (window-buffer (selected-window)))         ; if you want to dim same buffers, use (eq w (selected-window))
-                      (buffer-face-set 'default))
+                      (buffer-face-set '(:background "white")))
                      ((eq (window-buffer w) (window-buffer hydra-window))         ; saved for history: (eq w hydra-window)
                       (with-current-buffer (window-buffer w)
                         (buffer-face-set '(:background "grey"))))
