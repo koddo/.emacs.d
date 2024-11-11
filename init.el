@@ -2593,7 +2593,16 @@ Containing LEFT, and RIGHT aligned respectively."
 
 
 
+;; =========================================================
 
+(use-package rust-mode
+  :config
+  (add-hook 'rust-mode-hook
+            (lambda ()
+              (setq indent-tabs-mode nil)
+              (electric-indent-mode 0)
+              ))
+  )
 
 
 
