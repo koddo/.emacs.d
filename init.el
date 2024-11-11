@@ -2604,5 +2604,67 @@ Containing LEFT, and RIGHT aligned respectively."
               ))
   )
 
+;; =========================================================
 
+(setq org-todo-repeat-to-state t)   ; habit -> done -> habit, not todo
 
+;; t vs. T
+;; "PAUSED(p!)"
+;; "WORKING(w!)"
+(setq ym-org-todo-keywords-working '("TODAY(T!)" "NOW(n!)"))
+(setq ym-org-todo-keywords-undone
+      `("TODO(t!)" "NEXT(n!)"
+	,@ym-org-todo-keywords-working
+	"POSTPONED(P!)" "WAITING(W!)" "IN PROGRESS(i!)"
+	"HABIT(h/@)" "REGULARLY(r!)" "SOMEDAY(S!)" "MAYBE(M!)"
+	))
+(setq ym-org-todo-keywords-done
+      '("DONE(d!)"
+	"CANCELED(c@)"
+	"HABIT SKIPPED(!)"
+	"REDIRECTED(R@)" "DELEGATED(D@)"
+	"MERGED(m@)" "JIRA(j@)"))
+(setq ym-org-todo-state-string-in-log "State:     (")
+(setq org-todo-keywords
+      `((sequence ,@ym-org-todo-keywords-undone "|" ,@ym-org-todo-keywords-done)))
+
+(setq org-agenda-custom-commands
+	  `(
+        	    ("x1" "habits"
+	     (
+	      (todo "" (
+			(org-agenda-files nil)
+			(org-agenda-overriding-header
+			 (let* ((habits-top-path "~/werk/Habits-top.org")
+				(habits-top (if (f-exists-p habits-top-path) (string-trim (f-read-text habits-top-path)) "file missing")))
+			   (concat
+			    (unless (string-empty-p habits-top) (concat habits-top-path ": \n\n" habits-top "\n\n"))
+			    ))
+			 )))
+	      (agenda "" (
+			  (org-agenda-files '("~/werk/Habits.org"))
+			  (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 1"))
+			  (org-agenda-span 1)
+			  (org-agenda-overriding-header "")
+			  (org-agenda-todo-keyword-format "")
+			  (org-agenda-prefix-format "")
+			  ))
+	      (agenda "" (
+			  (org-agenda-files '("~/werk/Habits.org"))
+			  (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 2"))
+			  (org-agenda-span 1)
+			  (org-agenda-overriding-header "")
+			  (org-agenda-todo-keyword-format "")
+			  (org-agenda-prefix-format "")
+			  ))
+	      (agenda "" (
+			  (org-agenda-files '("~/werk/Habits.org"))
+			  (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 3"))
+			  (org-agenda-span 1)
+			  (org-agenda-overriding-header "")
+			  (org-agenda-todo-keyword-format "")
+			  (org-agenda-prefix-format "")
+			  ))
+	      ))
+
+	    ))
