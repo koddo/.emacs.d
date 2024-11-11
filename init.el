@@ -1282,6 +1282,12 @@ there's a region, all lines that region covers will be duplicated."
   (setq org-cycle-separator-lines 0)    ; number of blank lines between trees when folded, default: 2; set it to -1 to preserve all whitespace; mine is set to 0 to have more content on screen
   (setq org-fontify-quote-and-verse-blocks t)   ; otherwise they are not highlighted
   (setq org-tags-column 40)
+
+  (setq org-log-into-drawer t      ; log both into :LOGBOOK:
+      org-clock-into-drawer t
+      org-log-repeat nil          ; disable :LAST_REPEAT:
+      )
+
   ;; (setq org-refile-targets '((org-agenda-files :maxlevel . 3)))    ; (setq org-refile-targets '(("~/werk" :maxlevel . 3)))
 
   (setq org-agenda-files '("~/werk"))
