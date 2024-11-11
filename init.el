@@ -2012,6 +2012,17 @@ Containing LEFT, and RIGHT aligned respectively."
  ;; Maybe later.
  )
 
+;; from https://emacs.stackexchange.com/questions/28537/a-way-to-insert-a-predefined-text-into-magits-commit-message-window
+;; (defun my-git-commit-setup ()
+;;   (insert "Ctrl-S"))
+;; (add-hook 'git-commit-setup-hook 'my-git-commit-setup)
+;; or
+;; from https://emacs.stackexchange.com/questions/46244/how-to-perform-an-automatic-commit-with-predefined-message-using-magit
+;; after staging:
+;; (magit-call-git "commit" "-m" "the message")
+;; (magit-refresh)
+
+
 ;; =========================================================
 
 ;; also try https://github.com/dgutov/diff-hl/
@@ -2089,6 +2100,8 @@ Containing LEFT, and RIGHT aligned respectively."
   (setq projectile-switch-project-action #'projectile-dired)
 
   ;; projectile-add-known-project
+
+  ;; (setq projectile-project-root-files ?)       ; otherwise tramp is slow, because projectile looks for too many files
   )
 
 ;; TODO: hydra
