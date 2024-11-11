@@ -2554,11 +2554,11 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
-(ignore-errors
-  (use-package bubbles
-    :straight (:local-repo "~/wu/emacs-bubbles-wmm")
-    )
-  )
+;; (ignore-errors
+;;   (use-package bubbles
+;;     :straight (:host nil :local-repo "~/wu/emacs-bubbles-wmm")
+;;     )
+;;   )
 
 
 
