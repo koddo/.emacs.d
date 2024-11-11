@@ -1300,6 +1300,8 @@ there's a region, all lines that region covers will be duplicated."
         (save-match-data
           (save-excursion
             (replace-regexp "^\\(.+\\)$" "+-\\1-+" nil beg end))))))
+
+  (require 'org-checklist)   ; for the reset_check_boxes property of repeated tasks
   )
 
 ;; why can't I do (require 'org-checklist) without this?
@@ -1463,6 +1465,92 @@ there's a region, all lines that region covers will be duplicated."
 
   (global-org-modern-mode)
   )
+
+;; =========================================================
+
+(require 'org-habit)
+
+(setq org-habit-show-all-today t)
+(setq org-habit-show-habits t)
+(setq org-habit-show-habits-only-for-today nil)
+
+(setq org-habit-graph-column 17)
+(setq org-habit-preceding-days 48)
+(setq org-habit-following-days 3)
+
+;; (setq ym-timer-list-to-show-habits   ; (dolist (x ym-timer-list-to-show-habits) (cancel-timer x))
+;;       (list
+;;        (run-at-time "07:00pm" (* 60 60 24)
+;;                    (lambda () (setq org-habit-show-habits t)))
+;;        (run-at-time "07:00am" (* 60 60 24)
+;;                    (lambda () (setq org-habit-show-habits t)))))
+
+(defun org-habit-get-priority (habit &optional moment) 1000)   ; this disables sorting by scheduled time, shows in the same order as in org file
+
+;; (setq org-habit-today-glyph ?╋)
+(setq org-habit-today-glyph ?⬛)
+(setq org-habit-completed-glyph ?●)
+(setq org-habit-missed-glyph ?○)    ; there's no such var originally, hence the monkey patch
+(load-file (expand-file-name (convert-standard-filename "org-habits-monkey-patch.el") user-emacs-directory))
+
+(defun my-org-todo-with-date (&optional arg date-str)
+  (interactive "P")
+  (cl-letf* ((org-read-date-prefer-future nil)
+             (my-current-time (if date-str
+				                  (org-read-date t t date-str)
+				                (org-read-date t t nil "when:")
+				                ))
+             ((symbol-function #'current-time)
+              #'(lambda () my-current-time))
+             ((symbol-function #'org-today)
+              #'(lambda () (time-to-days my-current-time)))
+             ((symbol-function #'org-current-effective-time)
+              #'(lambda () my-current-time)))
+    (if (eq major-mode 'org-agenda-mode)
+	    (org-agenda-todo arg)
+      (org-todo arg))
+    ))
+
+
+(setq org-agenda-bulk-custom-functions
+      '(
+	    (?9 (lambda () (interactive) (my-org-todo-with-date "HABIT SKIPPED" "now")))
+	    (?0 (lambda () (interactive) (my-org-todo-with-date "DONE" "now")))
+	    (?1 (lambda () (interactive) (my-org-todo-with-date "DONE" "-1d 23:59")))
+	    (?2 (lambda () (interactive) (my-org-todo-with-date "DONE" "-2d 23:59")))
+	    (?3 (lambda () (interactive) (my-org-todo-with-date "DONE" "-3d 23:59")))
+	    (?4 (lambda () (interactive) (my-org-todo-with-date "DONE" "-4d 23:59")))
+	    (?5 (lambda () (interactive) (my-org-todo-with-date "DONE" "-5d 23:59")))
+	    (?6 (lambda () (interactive) (my-org-todo-with-date "DONE" "-6d 23:59")))
+	    (?7 (lambda () (interactive) (my-org-todo-with-date "DONE" "-7d 23:59")))
+	    (?8 (lambda () (interactive) (my-org-todo-with-date "DONE" "-8d 23:59")))
+	    ))
+
+;; maybe
+;; run the following after midnight in the Habits.org
+;; https://www.emacswiki.org/emacs/MidnightMode
+
+(defun ym-org-fix-habits-skipped ()
+  (interactive)
+  (save-excursion
+    (save-match-data
+      (beginning-of-buffer)
+      (while (search-forward "- State \"HABIT SKIPPED\"" nil t)
+	    (let* ((date-str-on-the-line (save-match-data
+				                       (re-search-forward "\\[\\(.*\\)\\]" (line-end-position))
+				                       (match-string 1)))
+	           (today-str (org-read-date nil nil "today"))
+	           (number-of-days-since-the-date (- (org-time-string-to-absolute today-str)
+						                         (org-time-string-to-absolute date-str-on-the-line)))
+	           )
+	      (when (>= number-of-days-since-the-date 1)
+	        ;; I have no idea why, but the `save-match-data` above doesn't work, I get `args-out-of-range`
+	        ;; but I don't care, it's a hack anyway, so I search for the substring once again
+	        (save-match-data
+	          (beginning-of-line)
+	          (search-forward "- State \"HABIT SKIPPED\"" nil t)
+	          (replace-match "- State \"HABIT\"")))
+	      )))))
 
 ;; =========================================================
 
