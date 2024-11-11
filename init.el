@@ -1331,9 +1331,14 @@ there's a region, all lines that region covers will be duplicated."
              (expand-file-name ".images" (vc-root-dir))))
         (org-download-screenshot))))
 
-  (setq org-download-screenshot-method "xfce4-screenshooter --region --save %s"   ; "gnome-screenshot -a -f %s" ; for macos: "screencapture -i %s"
-        org-download-edit-cmd "open -a Krita %s"   ; TODO: move to preinit
-        org-download-backend "wget \"%s\" -O \"%s\"")
+  (setq org-download-screenshot-method
+        "sleep 1 && gnome-screenshot -a -f %s"       ; sleep is a hack here, since screenshot apps used to let me do alt-tab, but after an update this is broken
+        ;; "gnome-screenshot -a -f %s"
+        ;; "xfce4-screenshooter --region --save %s"
+        ;; "screencapture -i %s"   ; macos
+        )
+  (setq org-download-edit-cmd "open -a Krita %s")   ; TODO: move to preinit
+  (setq org-download-backend "wget \"%s\" -O \"%s\"")
   )
 
 ;; =========================================================
