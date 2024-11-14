@@ -8,5 +8,7 @@
 !/.gitignore
 !/early-init.el
 !/init.el
+!/org-habits-monkey-patch.el
+!/maybe.el
 
 !/straight/versions/
