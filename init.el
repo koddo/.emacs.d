@@ -2292,7 +2292,7 @@ Containing LEFT, and RIGHT aligned respectively."
          
          (setq bm-cycle-all-buffers t)
          (add-hook 'bm-after-goto-hook 'org-bookmark-jump-unhide)
-         (setq bm-repository-file "~/.emacs.d/bm-repository")
+         ;; (setq bm-repository-file "~/.emacs.d/bm-repository")    ; no-littering takes care of this
          (setq-default bm-buffer-persistence t)
 
          (setq bm-electric-show nil)    ; default: t --- but this didn't work for me for some reason
