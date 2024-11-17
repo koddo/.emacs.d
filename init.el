@@ -1987,7 +1987,7 @@ Containing LEFT, and RIGHT aligned respectively."
         '(
           ("mtime" 11 ym/magit-repolist-column--date-last-touched)   ; can't figure out how to use (:sort <)
           ("version" 30 magit-repolist-column-version)           ; (:sort magit-repolist-version<)
-          ("upstream" 12 magit-repolist-column-upstream)
+          ("upstream" 20 magit-repolist-column-upstream)
           ("B<U" 3 magit-repolist-column-unpulled-from-upstream ((:right-align t)))      ; (:sort <)
           ("B>U" 3 magit-repolist-column-unpushed-to-upstream ((:right-align t)))        ; (:sort <)
           ("B<P" 3 magit-repolist-column-unpulled-from-pushremote ((:right-align t)))
@@ -1996,7 +1996,7 @@ Containing LEFT, and RIGHT aligned respectively."
           (" " 3 magit-repolist-column-flags)   ; N, U, and S mean: uNtracked, Unstaged, Staged
           ("#s" 3 magit-repolist-column-stashes)
           ("branch" 30 magit-repolist-column-branch ((:right-align t)))
-          ("path" 300 magit-repolist-column-path)
+          ("path" 300 magit-repolist-column-path (:sort <))
           ))
   )
 
