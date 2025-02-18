@@ -1314,6 +1314,8 @@ there's a region, all lines that region covers will be duplicated."
 (use-package org-contrib)
 
 (use-package org-ql)
+(use-package org-super-agenda)
+
 
 ;; =========================================================
 
@@ -1562,6 +1564,10 @@ there's a region, all lines that region covers will be duplicated."
 	          (search-forward "- State \"HABIT SKIPPED\"" nil t)
 	          (replace-match "- State \"HABIT\"")))
 	      )))))
+
+;; =========================================================
+
+(use-package request)
 
 ;; =========================================================
 
@@ -2071,6 +2077,8 @@ Containing LEFT, and RIGHT aligned respectively."
 (use-package ob-nix
   :after org)
 
+(use-package ob-mermaid)
+
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((emacs-lisp . t)
@@ -2080,6 +2088,7 @@ Containing LEFT, and RIGHT aligned respectively."
    (clojure . t)
    (java . t)
    (nix . t)
+   (mermaid . t)
    ;; (javascript . t)
    ;; (lisp . t)
    ;; (haskell . t)
@@ -2105,6 +2114,11 @@ Containing LEFT, and RIGHT aligned respectively."
   )
 
 ;; TODO: hydra
+
+;; =========================================================
+
+(use-package envrc
+  :hook (after-init . envrc-global-mode))
 
 ;; =========================================================
 
@@ -2525,41 +2539,166 @@ Containing LEFT, and RIGHT aligned respectively."
 
 (pretty-hydra-define hydra-f1 (:exit t)
   (
-   "ccc" (("7" (lambda () (interactive)
-		 (org-ql-search "~/werk/English.org" '(tags "drill") :sort 'date)
-		 (delete-other-windows)
-		 )
-	   "english")
-	  ("8" (lambda () (interactive)
-		 (org-ql-search "~/werk/Spanish.org" '(tags "drill") :sort 'date)
-		 (delete-other-windows)
-		 )
-	   "spanish")
-	  ("9" (lambda () (interactive)
-		 (org-ql-search (org-agenda-files) '(and (tags "clojure") (tags "drill" "drilltodo")) :sort 'date)
-		 (delete-other-windows)
-		 )
-	   "clojure")
-	  ("u" (lambda () (interactive)
-		 (org-ql-search (org-agenda-files) '(and (tags "drill" "drilltodo") (not (tags "english" "spanish" "humor"))) :sort '(date))
-		 (delete-other-windows)
-		 )
-	   "drill and drilltodo")
-	  ("i" (lambda () (interactive)
-		 (org-ql-search (org-agenda-files) '(and (tags "drilltodo") (not (tags "english" "spanish" "humor"))) :sort '(date))
-		 (delete-other-windows)
-		 )
-	   "drilltodo only")
-	  ("o" (lambda () (interactive)
-		     (let ((tt (read-string "drill tag: "))
-                   (org-agenda-files '("~/werk")))
-               (org-ql-search (org-agenda-files) `(and (tags "drill") (tags ,tt) (not (tags "english" "spanish" "humor"))) :sort '(date))
-		       (delete-other-windows)))
-	   "drill only")
+   "ccc" (("e" (lambda () (interactive)
+		         (org-ql-search "~/werk/English.org" '(tags "drill") :sort 'date)
+		         (delete-other-windows)
+		         )
+	       "english")
+	      ("8" (lambda () (interactive)
+		         (org-ql-search "~/werk/Spanish.org" '(tags "drill") :sort 'date)
+		         (delete-other-windows)
+		         )
+	       "spanish")
+	      ("9" (lambda () (interactive)
+		         (org-ql-search (org-agenda-files) '(and (tags "clojure") (tags "drill" "drilltodo")) :sort 'date)
+		         (delete-other-windows)
+		         )
+	       "clojure")
+	      ("u" (lambda () (interactive)
+		         (org-ql-search (org-agenda-files) '(and (tags "drill" "drilltodo") (not (tags "english" "spanish" "humor"))) :sort '(date))
+		         (delete-other-windows)
+		         )
+	       "drill and drilltodo")
+	      ("i" (lambda () (interactive)
+		         (org-ql-search (org-agenda-files) '(and (tags "drilltodo") (not (tags "english" "spanish" "humor"))) :sort '(date))
+		         (delete-other-windows)
+		         )
+	       "drilltodo only")
+	      ("o" (lambda () (interactive)
+		         (let ((tt (read-string "drill tag: "))
+                       (org-agenda-files '("~/werk")))
+                   (org-ql-search (org-agenda-files) `(and (tags "drill") (tags ,tt) (not (tags "english" "spanish" "humor"))) :sort '(date))
+		           (delete-other-windows)))
+	       "drill only")
+          )
+   
+   "eee" (("1" (lambda () (interactive)
+		         (let ((org-agenda-files `("~/werk"
+                                           ,@(directory-files-recursively "~/wo/veson.dev/content/blog" "\\.org$")
+                                           ,@(directory-files-recursively "~/.setuplets" "\\.org$")
+                                           )))
+                   (org-ql-search (org-agenda-files) '(and (not (todo))
+                                                           (tags "try" "read" "watch" "listen" "blog" "todo")
+                                                           ;; (tags "git")
+                                                           (not
+                                                            (tags "done" "canceled")
+                                                            )
+                                                           ;; (tags "zoom_out")
+                                                           ;; (ts-inactive)
+                                                           )
+                     :super-groups '((:auto-ts))))
+		         (delete-other-windows)
+		         )
+	       "projects")
+          ("2" (lambda () (interactive)
+		         (let ((org-agenda-files '("~/werk")))
+                   (org-ql-search (org-agenda-files)
+                     '(and
+                       (todo)
+                       (not (done))
+                       (not (habit))
+                       ;; (ts)
+                       ;; (or
+                       ;;  (deadline auto)
+                       ;;  (scheduled :to today)
+                       ;;  (ts-active :to today)
+                       ;;  (ts-inactive :to today))
+                       )
+                     :super-groups '((:auto-ts))
+                     ))
 
-	  )
+		         (delete-other-windows))
+	       "todos")
+          ("3" (lambda () (interactive)
+                 (org-id-goto "7329a7e5-d444-43c1-8f61-be928613acad")
+		         (delete-other-windows))
+	       "checklist")
+          ("4" (lambda () (interactive)
+                 (org-agenda nil "x1")
+		         (delete-other-windows))
+	       "habits")
+          ("5" (lambda () (interactive)
+                 (let ((org-agenda-files '("~/werk")))
+                   (org-ql-search (org-agenda-files)
+                     `(and
+                       (or  ; basically, list all todos
+                        (not (done))
+                        (todo ,@ym-org-todo-keywords-done---with-no-shortcuts)
+                        )
+                       (not (habit))
+                       (tags "occasionally")
+                       ;; (ts)
+                       ;; (or
+                       ;;  (deadline auto)
+                       ;;  (scheduled :to today)
+                       ;;  (ts-active :to today)
+                       ;;  (ts-inactive :to today))
+                       )
+                     ;; :super-groups '((:auto-ts))
+                     ))
+		         (delete-other-windows))
+	       "occasionally")
+          ("6" (lambda () (interactive)
+                 (org-open-link-from-string "[[id:79c89c1c-76ce-428f-ade6-053f56369e25][movies and documentaries]]")
+                 (delete-other-windows)
+                 )
+	       "movies and documentaries")
+          ("7" (lambda () (interactive)
+                 (org-open-link-from-string "[[id:dcf78ab5-5ee9-4f12-938e-cbcfaf6e429f][trampolines park]]")
+                 (delete-other-windows)
+                 )
+	       "trampolines park")
+          ("8" (lambda () (interactive)
+                 (org-open-link-from-string "[[id:8377d402-f9d4-4bd5-8228-6032af4336c5][muay thai]]")
+                 (delete-other-windows)
+                 )
+	       "muay thai")
+          )
    ))
 (ym/define-key (kbd "<f1>") #'hydra-f1/body)
+
+
+(setq org-super-agenda-date-format "=== %Y-%m-%d %a ===")
+
+(defun ym/org-agenda-goto-timestamp ()
+     (interactive)
+     (org-agenda-goto)
+     (progn (end-of-line)
+	    (next-line)
+	    (beginning-of-line))
+     (ignore-errors
+      (let ((cur-line (line-number-at-pos))
+	    (ts-line (save-excursion (re-search-forward org-ts-regexp-both)
+				     (line-number-at-pos))))
+	(when (= cur-line ts-line)
+	  (re-search-forward org-ts-regexp-both)
+	  (beginning-of-line)
+	  (forward-char 7)      ; to the day pos [2022-01-31 Mon]
+	  ))))
+ (defun ym/agenda-setup ()
+   (local-set-key (kbd "t") 'ym/org-agenda-goto-timestamp))
+ (add-hook 'org-agenda-mode-hook #'ym/agenda-setup)
+ 
+(comment
+
+ (defun org-ql-ts-property<-fn (property)
+   "Return a comparator function comparing the element PROPERTY as a timestamp."
+   (lambda (a b)
+     (let ((a-ts (org-entry-get a property))
+           (b-ts (org-entry-get b property)))
+       (cond
+        ((and a-ts b-ts)
+         (string< a-ts b-ts))
+        (a-ts t)
+        (b-ts nil)
+        ;; (a-ts nil)
+        ;; (b-ts t)
+        ))))
+ ;; :sort (org-ql-ts-property<-fn "TIMESTAMP_IA");; :sort (org-ql-ts-property<-fn "TIMESTAMP_IA")
+ 
+   )
+
+
 
 ;; =========================================================
 
@@ -2637,47 +2776,63 @@ Containing LEFT, and RIGHT aligned respectively."
 	"HABIT SKIPPED(!)"
 	"REDIRECTED(R@)" "DELEGATED(D@)"
 	"MERGED(m@)" "JIRA(j@)"))
+(setq ym-org-todo-keywords-done---with-no-shortcuts
+      (mapcar (lambda (string)
+                (let ((index (string-match "(" string)))
+                  (if index
+                      (substring string 0 index)
+                    string)))
+              ym-org-todo-keywords-done
+              ))
 (setq ym-org-todo-state-string-in-log "State:     (")
 (setq org-todo-keywords
       `((sequence ,@ym-org-todo-keywords-undone "|" ,@ym-org-todo-keywords-done)))
 
 (setq org-agenda-custom-commands
 	  `(
-        	    ("x1" "habits"
+        ("x1" "habits"
 	     (
 	      (todo "" (
-			(org-agenda-files nil)
-			(org-agenda-overriding-header
-			 (let* ((habits-top-path "~/werk/Habits-top.org")
-				(habits-top (if (f-exists-p habits-top-path) (string-trim (f-read-text habits-top-path)) "file missing")))
-			   (concat
-			    (unless (string-empty-p habits-top) (concat habits-top-path ": \n\n" habits-top "\n\n"))
-			    ))
-			 )))
+			        (org-agenda-files nil)
+			        (org-agenda-overriding-header
+			         (let* ((habits-top-path "~/werk/Habits-top.org")
+				            (habits-top (if (f-exists-p habits-top-path) (string-trim (f-read-text habits-top-path)) "file missing")))
+			           (concat
+			            (unless (string-empty-p habits-top) (concat habits-top-path ": \n\n" habits-top "\n\n"))
+			            ))
+			         )))
 	      (agenda "" (
-			  (org-agenda-files '("~/werk/Habits.org"))
-			  (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 1"))
-			  (org-agenda-span 1)
-			  (org-agenda-overriding-header "")
-			  (org-agenda-todo-keyword-format "")
-			  (org-agenda-prefix-format "")
-			  ))
+			          (org-agenda-files '("~/werk/Habits.org"))
+			          (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 1"))
+			          (org-agenda-span 1)
+			          (org-agenda-overriding-header "")
+			          (org-agenda-todo-keyword-format "")
+			          (org-agenda-prefix-format "")
+			          ))
 	      (agenda "" (
-			  (org-agenda-files '("~/werk/Habits.org"))
-			  (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 2"))
-			  (org-agenda-span 1)
-			  (org-agenda-overriding-header "")
-			  (org-agenda-todo-keyword-format "")
-			  (org-agenda-prefix-format "")
-			  ))
+			          (org-agenda-files '("~/werk/Habits.org"))
+			          (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 2"))
+			          (org-agenda-span 1)
+			          (org-agenda-overriding-header "")
+			          (org-agenda-todo-keyword-format "")
+			          (org-agenda-prefix-format "")
+			          ))
 	      (agenda "" (
-			  (org-agenda-files '("~/werk/Habits.org"))
-			  (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 3"))
-			  (org-agenda-span 1)
-			  (org-agenda-overriding-header "")
-			  (org-agenda-todo-keyword-format "")
-			  (org-agenda-prefix-format "")
-			  ))
+			          (org-agenda-files '("~/werk/Habits.org"))
+			          (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 3"))
+			          (org-agenda-span 1)
+			          (org-agenda-overriding-header "")
+			          (org-agenda-todo-keyword-format "")
+			          (org-agenda-prefix-format "")
+			          ))
 	      ))
 
+        
+
 	    ))
+
+
+
+
+
+
