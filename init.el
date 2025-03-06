@@ -1999,7 +1999,7 @@ Containing LEFT, and RIGHT aligned respectively."
           ("B<P" 3 magit-repolist-column-unpulled-from-pushremote ((:right-align t)))
           ("B>P" 3 magit-repolist-column-unpushed-to-pushremote ((:right-align t)))
           ;; ("#b" 3 magit-repolist-column-branches)
-          (" " 3 magit-repolist-column-flags)   ; N, U, and S mean: uNtracked, Unstaged, Staged
+          (" " 3 magit-repolist-column-flags)   ; NUS -- N, U, and S mean: uNtracked, Unstaged, Staged
           ("#s" 3 magit-repolist-column-stashes)
           ("branch" 30 magit-repolist-column-branch ((:right-align t)))
           ("path" 300 magit-repolist-column-path (:sort <))
