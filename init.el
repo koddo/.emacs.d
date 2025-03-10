@@ -1972,22 +1972,34 @@ Containing LEFT, and RIGHT aligned respectively."
                         ;; another option is to use -path ./.git, but -name '.git' also works for submodules
                         "THE_FIND_COMMAND=$(command -v gfind || echo find) && $THE_FIND_COMMAND . -name '.git' -prune -o -type f -printf '%TY-%Tm-%Td\n' | sort -r | head -1"
                         )))
-  (setq magit-repository-directories
-        (let* ((dirs (list
-                      "~/.setuplets"
-                      "~/werk"
-                      "~/workspaces"
-                      ))
-               (w-subdirs (append
-                           (ignore-errors (f-directories "~/" (lambda (dir) (s-matches? "\/\.emacs\.d.*$" dir))))
-                           (ignore-errors (f-directories "~/wo" (lambda (dir) (not (f-hidden-p dir 'last)))))
-                           (ignore-errors (f-directories "~/wu" (lambda (dir) (not (f-hidden-p dir 'last)))))
-                           ))
-               (w-subdirs-relative-to-home (mapcar (lambda (d) (f-short d))    ; I'd like to see the ~/ in front of dirs in the list
-                                                   w-subdirs))
-               (my-dirs (append dirs w-subdirs-relative-to-home)))
-          (mapcar (lambda (d) (cons d 0))       ; magit-repository-directories is a list of cons-cells, where the cdr is depth, 0 means only the dir itself
-                  my-dirs)))
+
+
+  (defun ym/advice-magit-list-repositories (orig-fun &optional args)
+    (setq magit-repository-directories
+          (let* ((dirs (list
+                        "~/.password-store"
+                        "~/.setuplets"
+                        "~/werk"
+                        "~/workspaces"
+                        ))
+                 (w-subdirs (append
+                             (ignore-errors (f-directories "~/"
+                                                           (lambda (dir)
+                                                             (s-matches? (rx (seq "/.emacs.d."))    ; the last dot excludes ~/.emacs.d, which is for chemacs2
+                                                                         dir))
+                                                           ))
+                             (ignore-errors (f-directories "~/wo" (lambda (dir) (not (f-hidden-p dir 'last)))))
+                             (ignore-errors (f-directories "~/wu" (lambda (dir) (not (f-hidden-p dir 'last)))))
+                             ))
+                 (w-subdirs-relative-to-home (mapcar (lambda (d) (f-short d))    ; I'd like to see the ~/ in front of dirs in the list
+                                                     w-subdirs))
+                 (my-dirs (append dirs w-subdirs-relative-to-home)))
+            (mapcar (lambda (d) (cons d 0))       ; magit-repository-directories is a list of cons-cells, where the cdr is depth, 0 means only the dir itself
+                    my-dirs)))
+    (apply orig-fun args))
+  (advice-add 'magit-list-repositories :around 'ym/advice-magit-list-repositories)
+  ;; (advice-remove 'magit-list-repositories 'ym/advice-magit-list-repositories)
+
 
   (setq magit-repolist-columns      ; usage: M-x tabulated-list-sort
         '(
