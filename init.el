@@ -2584,42 +2584,13 @@ Containing LEFT, and RIGHT aligned respectively."
 	       "drill only")
           )
    
-   "eee" (("1" (lambda () (interactive)
-		         (let ((org-agenda-files `("~/werk"
-                                           ,@(directory-files-recursively "~/wo/veson.dev/content/blog" "\\.org$")
-                                           ,@(directory-files-recursively "~/.setuplets" "\\.org$")
-                                           )))
-                   (org-ql-search (org-agenda-files) '(and (not (todo))
-                                                           (tags "try" "read" "watch" "listen" "blog" "todo")
-                                                           ;; (tags "git")
-                                                           (not
-                                                            (tags "done" "canceled")
-                                                            )
-                                                           ;; (tags "zoom_out")
-                                                           ;; (ts-inactive)
-                                                           )
-                     :super-groups '((:auto-ts))))
-		         (delete-other-windows)
-		         )
+   "eee" (("1" (lambda () (interactive ) 
+                 (ym/org-ql-search--projects)
+                 (delete-other-windows))
 	       "projects")
-          ("2" (lambda () (interactive)
-		         (let ((org-agenda-files '("~/werk")))
-                   (org-ql-search (org-agenda-files)
-                     '(and
-                       (todo)
-                       (not (done))
-                       (not (habit))
-                       ;; (ts)
-                       ;; (or
-                       ;;  (deadline auto)
-                       ;;  (scheduled :to today)
-                       ;;  (ts-active :to today)
-                       ;;  (ts-inactive :to today))
-                       )
-                     :super-groups '((:auto-ts))
-                     ))
-
-		         (delete-other-windows))
+          ("2" (lambda () (interactive ) 
+                 (ym/org-ql-search--todos)
+                 (delete-other-windows))
 	       "todos")
           ("3" (lambda () (interactive)
                  (org-id-goto "7329a7e5-d444-43c1-8f61-be928613acad")
@@ -2843,6 +2814,73 @@ Containing LEFT, and RIGHT aligned respectively."
 
 	    ))
 
+
+(defun ym/org-ql-search--projects () (interactive)
+	   (let ((org-agenda-files `("~/werk"
+                                 ,@(directory-files-recursively "~/wo/veson.dev/content/blog" "\\.org$")
+                                 ,@(directory-files-recursively "~/.setuplets" "\\.org$")
+                                 )))
+         (org-ql-search (org-agenda-files) '(and (not (todo))
+                                                 (tags "try" "read" "watch" "listen" "blog" "todo")
+                                                 ;; (tags "git")
+                                                 (not
+                                                  (tags "done" "canceled")
+                                                  )
+                                                 ;; (tags "zoom_out")
+                                                 ;; (ts-inactive)
+                                                 )
+           :super-groups '((:auto-ts))))
+	   ;; (delete-other-windows)
+	   )
+
+(defun ym/org-ql-search--todos () (interactive)
+	   (let ((org-agenda-files '("~/werk")))
+         (org-ql-search (org-agenda-files)
+           '(and
+             (todo)
+             (not (done))
+             (not (habit))
+             ;; (ts)
+             ;; (or
+             ;;  (deadline auto)
+             ;;  (scheduled :to today)
+             ;;  (ts-active :to today)
+             ;;  (ts-inactive :to today))
+             )
+           :super-groups '((:auto-ts))
+           ))
+       ;; (delete-other-windows)
+       )
+
+(progn
+  (delete-other-windows)
+  (org-id-goto "7329a7e5-d444-43c1-8f61-be928613acad")
+  
+  (split-window-horizontally)
+  (ym/org-ql-search--projects)
+  
+  (split-window-horizontally)
+  (ym/org-ql-search--todos)
+  
+  (split-window-horizontally)
+  (find-file "~/werk/Notes-2.org")
+  (end-of-buffer)
+
+  (split-window-vertically)
+  (find-file "~/werk/mobile_org/Agenda-mobile.org")
+  
+  (split-window-vertically)
+  (find-file "~/werk/mobile_org/Notes-mobile.org")
+  
+  (split-window-vertically)
+  (find-file "~/werk/mobile_org/Random-coffee-mobile.org")
+  
+  ;; random coffee
+  ;; 
+
+  (balance-windows)
+
+  )
 
 
 
