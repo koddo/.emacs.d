@@ -2521,6 +2521,72 @@ Containing LEFT, and RIGHT aligned respectively."
 
 ;; =========================================================
 
+;; from https://emacs.stackexchange.com/questions/53611/how-to-trace-the-evaluation-of-all-forms-in-the-body-of-an-elisp-function/53617#53617
+
+(defun edebug-untrace (form)
+  (interactive)
+  "Remove tracing instructions from FORM."
+  (if (consp form)
+      (if (eq (car form) 'edebug-tracing)
+          (edebug-untrace (caddr form))
+        (cons (edebug-untrace (car form))
+              (edebug-untrace (cdr form))))
+    form))
+
+(defcustom edebug-trace-print-level 3
+  "`print-level' for `edebug-make-trace-form'."
+  :type 'integer
+  :group 'edebug)
+
+(defcustom edebug-trace-print-length 5
+  "`print-length' for `edebug-make-trace-form'."
+  :type 'integer
+  :group 'edebug)
+
+(defun edebug-make-trace-form (form)
+  "Prepare FORM for tracing."
+  `(edebug-tracing ,(let ((print-level edebug-trace-print-level)
+                          (print-length edebug-trace-print-length))
+                      (prin1-to-string (edebug-untrace form)))
+                   ,form))
+
+(defun edebug-make-trace-enter-wrapper (forms)
+  "Prepare function with FORMS for tracing."
+  (if edebug-def-name
+      `(edebug-tracing ,(format "%S%S"
+                                edebug-def-name
+                                (nreverse edebug-def-args))
+                       ,@forms)
+    `(progn ,@forms)))
+
+(defun edebug-instrument-for-tracing ()
+  "Like `edebug-defun' but instruments for tracing."
+  (interactive)
+  (cl-letf (((symbol-function 'edebug-make-enter-wrapper)
+             (lambda (forms)
+               (edebug-make-trace-enter-wrapper forms)))
+            ((symbol-function 'edebug-make-before-and-after-form)
+             (lambda (before-index form after-index)
+               (edebug-make-trace-form form)))
+            ((symbol-function 'edebug-make-after-form)
+             (lambda (form after-index)
+               (edebug-make-trace-form form))))
+    (edebug-defun)))
+
+;; end of copy-paste
+
+;; I don't want the *edebug-trace* buffer to pop up at all, because it interferes with code execution.
+;; I'd like to switch to it manually.
+;; Unfortunately, adding the following to display-buffer-alist doesn't work: ("\\*edebug-trace\\*" (display-buffer-no-window . ((allow-no-window . t))))
+;; But we can monkey-patch this function to make it hidden:
+(defun edebug-trace-display (buf-name fmt &rest args)
+  (let ((buf (get-buffer-create buf-name)))   ; buf-name = edebug-trace-buffer = "*edebug-trace*", see the edebug-trace function definition
+    (with-current-buffer buf
+      (goto-char (point-max))
+      (insert (apply #'edebug-format fmt args) "\n"))))
+
+;; =========================================================
+
 (pretty-hydra-define hydra-1 ()
   (
    ""
