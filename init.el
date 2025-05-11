@@ -1442,6 +1442,15 @@ there's a region, all lines that region covers will be duplicated."
    )
   :config
   (defun org-drill-entry-empty-p () nil)   ; don't ignore "empty" cards -- https://emacs.stackexchange.com/questions/38440/make-org-drill-allow-reviewing-empty-cards/58568#58568
+
+  ;; Manually adjust an interval after a repetition, when it feels like it it too long.
+  (defun m/org-drill-tree/change-interval ()
+   (interactive)
+   (let* ((org-log-reschedule nil)
+          (cur-interval (floor (string-to-number (org-entry-get nil "DRILL_LAST_INTERVAL"))))
+          (new-interval (read-number "New interval: " cur-interval)))
+     (org-schedule nil (concat "+" (number-to-string new-interval) "d"))
+     (org-entry-put nil "DRILL_LAST_INTERVAL" (number-to-string new-interval))))
   )
 
 ;; =========================================================
