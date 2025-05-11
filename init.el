@@ -2653,24 +2653,48 @@ Containing LEFT, and RIGHT aligned respectively."
 (setq org-super-agenda-date-format "=== %Y-%m-%d %a ===")
 
 (defun ym/org-agenda-goto-timestamp ()
-     (interactive)
-     (org-agenda-goto)
-     (progn (end-of-line)
-	    (next-line)
-	    (beginning-of-line))
-     (ignore-errors
-      (let ((cur-line (line-number-at-pos))
-	    (ts-line (save-excursion (re-search-forward org-ts-regexp-both)
-				     (line-number-at-pos))))
-	(when (= cur-line ts-line)
-	  (re-search-forward org-ts-regexp-both)
-	  (beginning-of-line)
-	  (forward-char 7)      ; to the day pos [2022-01-31 Mon]
-	  ))))
- (defun ym/agenda-setup ()
-   (local-set-key (kbd "t") 'ym/org-agenda-goto-timestamp))
- (add-hook 'org-agenda-mode-hook #'ym/agenda-setup)
- 
+  (interactive)
+  (progn (org-agenda-goto)
+         (next-line)
+         (end-of-line))
+  (let ((timestamp-beginning-pos (re-search-backward org-ts-regexp-both (line-beginning-position) t)))
+	(if timestamp-beginning-pos
+        (progn
+	      (forward-char 7)      ; to the month pos, [2022-01-31 Mon]
+          (let ((prompt-for-new-timestamp-active-or-inactive (lambda ()
+                                                           (let* ((context (org-element-context))
+                                                                  (ts-type (when (memq (org-element-type context) '(timestamp timestamp-range))
+                                                                             (org-element-property :type context)))   ; = 'active or 'inactive
+                                                                  (scheduled (when (eq (org-element-type context) 'planning)
+                                                                               (org-element-property :scheduled context))))
+                                                             (cond
+                                                              ((eq ts-type 'active) (org-timestamp nil))
+                                                              ((eq ts-type 'inactive) (org-timestamp-inactive nil))
+                                                              (scheduled (org-schedule nil))
+                                                              (t (message "No timestamp at point"))
+                                                              )))))
+            (split-window-vertically)
+            (let ((w (selected-window)))
+              (other-window 1)
+              (unwind-protect
+                  (funcall prompt-for-new-timestamp-active-or-inactive)
+                (progn (delete-window)
+                       (select-window w))))
+	        ))
+      (progn
+        (beginning-of-line)
+        (split-window-vertically)
+            (let ((w (selected-window)))
+              (other-window 1)
+              (unwind-protect
+                  (progn (org-timestamp-inactive nil)
+                         (newline))
+                (progn (delete-window)
+                       (select-window w))))))))
+(defun ym/agenda-setup ()
+  (local-set-key (kbd "t") 'ym/org-agenda-goto-timestamp))
+(add-hook 'org-agenda-mode-hook #'ym/agenda-setup)
+
 (comment
 
  (defun org-ql-ts-property<-fn (property)
