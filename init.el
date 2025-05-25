@@ -1282,10 +1282,12 @@ there's a region, all lines that region covers will be duplicated."
   (setq org-cycle-separator-lines 0)    ; number of blank lines between trees when folded, default: 2; set it to -1 to preserve all whitespace; mine is set to 0 to have more content on screen
   (setq org-fontify-quote-and-verse-blocks t)   ; otherwise they are not highlighted
   (setq org-tags-column 40)
+  (setf (alist-get 'file org-link-frame-setup) 'find-file)   ; open org links in the same window, by default it's find-file-other-window
 
   (setq org-log-into-drawer t      ; log both into :LOGBOOK:
       org-clock-into-drawer t
       org-log-repeat nil          ; disable :LAST_REPEAT:
+      setq org-log-reschedule nil
       )
 
   ;; (setq org-refile-targets '((org-agenda-files :maxlevel . 3)))    ; (setq org-refile-targets '(("~/werk" :maxlevel . 3)))
@@ -1340,9 +1342,9 @@ there's a region, all lines that region covers will be duplicated."
         (org-download-screenshot))))
 
   (setq org-download-screenshot-method
-        "sleep 1 && gnome-screenshot -a -f %s"       ; sleep is a hack here, since screenshot apps used to let me do alt-tab, but after an update this is broken
+        ;; "sleep 1 && gnome-screenshot -a -f %s"       ; sleep is a hack here, since screenshot apps used to let me do alt-tab, but after an update this is broken
         ;; "gnome-screenshot -a -f %s"
-        ;; "xfce4-screenshooter --region --save %s"
+        "sleep 1 && xfce4-screenshooter --region --save %s"
         ;; "screencapture -i %s"   ; macos
         )
   (setq org-download-edit-cmd "open -a Krita %s")   ; TODO: move to preinit
@@ -1500,16 +1502,9 @@ there's a region, all lines that region covers will be duplicated."
 (setq org-habit-preceding-days 48)
 (setq org-habit-following-days 3)
 
-;; (setq ym-timer-list-to-show-habits   ; (dolist (x ym-timer-list-to-show-habits) (cancel-timer x))
-;;       (list
-;;        (run-at-time "07:00pm" (* 60 60 24)
-;;                    (lambda () (setq org-habit-show-habits t)))
-;;        (run-at-time "07:00am" (* 60 60 24)
-;;                    (lambda () (setq org-habit-show-habits t)))))
-
 (defun org-habit-get-priority (habit &optional moment) 1000)   ; this disables sorting by scheduled time, shows in the same order as in org file
+(defun org-habit-get-urgency (habit &optional moment) 1000)   ; this disables sorting by scheduled time, shows in the same order as in org file
 
-;; (setq org-habit-today-glyph ?╋)
 (setq org-habit-today-glyph ?⬛)
 (setq org-habit-completed-glyph ?●)
 (setq org-habit-missed-glyph ?○)    ; there's no such var originally, hence the monkey patch
@@ -2015,10 +2010,10 @@ Containing LEFT, and RIGHT aligned respectively."
           ("mtime" 11 ym/magit-repolist-column--date-last-touched)   ; can't figure out how to use (:sort <)
           ("version" 30 magit-repolist-column-version)           ; (:sort magit-repolist-version<)
           ("upstream" 20 magit-repolist-column-upstream)
-          ("B<U" 3 magit-repolist-column-unpulled-from-upstream ((:right-align t)))      ; (:sort <)
-          ("B>U" 3 magit-repolist-column-unpushed-to-upstream ((:right-align t)))        ; (:sort <)
-          ("B<P" 3 magit-repolist-column-unpulled-from-pushremote ((:right-align t)))
-          ("B>P" 3 magit-repolist-column-unpushed-to-pushremote ((:right-align t)))
+          ("<U" 3 magit-repolist-column-unpulled-from-upstream ((:right-align t)))      ; (:sort <)
+          (">U" 3 magit-repolist-column-unpushed-to-upstream ((:right-align t)))        ; (:sort <)
+          ("<P" 3 magit-repolist-column-unpulled-from-pushremote ((:right-align t)))
+          (">P" 3 magit-repolist-column-unpushed-to-pushremote ((:right-align t)))
           ;; ("#b" 3 magit-repolist-column-branches)
           (" " 3 magit-repolist-column-flags)   ; NUS -- N, U, and S mean: uNtracked, Unstaged, Staged
           ("#s" 3 magit-repolist-column-stashes)
@@ -2657,9 +2652,15 @@ Containing LEFT, and RIGHT aligned respectively."
                    (org-ql-search (org-agenda-files) `(and (tags "drill") (tags ,tt) (not (tags "english" "spanish" "humor"))) :sort '(date))
 		           (delete-other-windows)))
 	       "drill only")
+          ("l" (lambda () (interactive)
+		         (org-ql-search (org-agenda-files) '(and (tags "leetcode") (tags "drill")) :sort 'date)
+		         (delete-other-windows)
+		         )
+	       "leetcode")
           )
    
-   "eee" (("1" (lambda () (interactive ) 
+   "eee" (("0" ym/dashboard)
+          ("1" (lambda () (interactive ) 
                  (ym/org-ql-search--projects)
                  (delete-other-windows))
 	       "projects")
