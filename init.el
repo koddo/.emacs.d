@@ -1709,14 +1709,16 @@ there's a region, all lines that region covers will be duplicated."
                     :foreground "grey60"
                     :box (list
                           :color "grey22"
-                          :line-width '(0 . 2))       ; used to be '(0 . 9)
+                          :line-width '(1 . 2)
+                          )       ; used to be '(0 . 9)
                     
                     :background "grey22")
 (set-face-attribute 'mode-line-inactive nil
                     :foreground "grey60"
                     :box (list
                           :color "grey22"
-                          :line-width '(1 . 2))      ; used to be '(1 . 2)
+                          :line-width '(1 . 2)
+                          )      ; used to be '(1 . 2)
                     :background "grey90")
 
 (defun ym/align-mode-line (left right)
@@ -1853,7 +1855,7 @@ Containing LEFT, and RIGHT aligned respectively."
                     :foreground "grey36"
                     :box (list
                           :color "grey72"
-                          :line-width '(10 . 0)
+                          :line-width '(10 . 1)
                           )
                     :background "grey72"                    
                     )
