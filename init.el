@@ -3051,6 +3051,15 @@ Containing LEFT, and RIGHT aligned respectively."
  )
 
 
+(comment
+ (org-ql-search (org-agenda-files) '(and
+                                     (tags "drill")
+                                     (tags "math")
+                                     (not (tags "english" "spanish" "humor"))
+                                     )
+   :sort '(date))
+ )
+
 
 
 
