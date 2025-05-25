@@ -2939,72 +2939,98 @@ Containing LEFT, and RIGHT aligned respectively."
 
 	    ))
 
+(defun ym/dashboard ()
+  (interactive)
+  (let ((buf-name "*Daily checklist*"))
+    (if (get-buffer buf-name)
+        (switch-to-buffer buf-name)
+      (org-id-goto "10b50e2c-1545-427c-a43e-77940cddcfa0")
+      (clone-indirect-buffer buf-name t)
+      (narrow-to-region       ; taken from https://emacs.stackexchange.com/questions/21353/in-org-mode-is-there-a-way-to-narrow-the-buffer-to-just-the-text-under-a-headin
+       (progn (unless (org-at-heading-p) (org-next-visible-heading -1))
+              (forward-line 5)
+              (point))
+       (progn (org-next-visible-heading 1)    ; a comment from the post: To make it more robust, consider adding code to the start of the second progn to throw an error if (org-at-heading-p) is true. In this case, there is no text to narrow to between the two headings.
+              (point)))
+      (highlight-regexp "\\[ \\]" "yellow")     ; the following is less conspicuous: (highlight-regexp "\\[\\( \\)\\]" "yellow" 1)
+      ))
 
-(defun ym/org-ql-search--projects () (interactive)
-	   (let ((org-agenda-files `("~/werk"
-                                 ,@(directory-files-recursively "~/wo/veson.dev/content/blog" "\\.org$")
-                                 ,@(directory-files-recursively "~/.setuplets" "\\.org$")
-                                 )))
-         (org-ql-search (org-agenda-files) '(and (not (todo))
-                                                 (tags "try" "read" "watch" "listen" "blog" "todo")
-                                                 ;; (tags "git")
-                                                 (not
-                                                  (tags "done" "canceled")
-                                                  )
-                                                 ;; (tags "zoom_out")
-                                                 ;; (ts-inactive)
-                                                 )
-           :super-groups '((:auto-ts))))
-	   ;; (delete-other-windows)
-	   )
-
-(defun ym/org-ql-search--todos () (interactive)
-	   (let ((org-agenda-files '("~/werk")))
-         (org-ql-search (org-agenda-files)
-           '(and
-             (todo)
-             (not (done))
-             (not (habit))
-             ;; (ts)
-             ;; (or
-             ;;  (deadline auto)
-             ;;  (scheduled :to today)
-             ;;  (ts-active :to today)
-             ;;  (ts-inactive :to today))
-             )
-           :super-groups '((:auto-ts))
-           ))
-       ;; (delete-other-windows)
-       )
-
-(progn
   (delete-other-windows)
-  (org-id-goto "7329a7e5-d444-43c1-8f61-be928613acad")
-  
+
+  (ignore-errors (windmove-right))
+  (switch-to-buffer "*Daily checklist*")
   (split-window-horizontally)
+  (split-window-vertically)
+  (ignore-errors (windmove-down))
+  (find-file "~/werk/Agenda.org")
+
+  (ignore-errors (windmove-right))
   (ym/org-ql-search--projects)
-  
   (split-window-horizontally)
+  (split-window-vertically)
+  (ignore-errors (windmove-down))
   (ym/org-ql-search--todos)
-  
-  (split-window-horizontally)
-  (find-file "~/werk/Notes-2.org")
-  (end-of-buffer)
 
+  (ignore-errors (windmove-right))
+  (find-file "~/werk/Agenda-top.org")
+  ;; (split-window-horizontally)
   (split-window-vertically)
+  (ignore-errors (windmove-down))
   (find-file "~/werk/mobile_org/Agenda-mobile.org")
-  
   (split-window-vertically)
-  (find-file "~/werk/mobile_org/Notes-mobile.org")
+  (ignore-errors (windmove-down))
+  (find-file "~/werk/Notes.org")      ;; (end-of-buffer)
+  (select-window (next-window))
   
-  (split-window-vertically)
-  (find-file "~/werk/mobile_org/Random-coffee-mobile.org")
-  
-  ;; random coffee
-  ;; 
-
   (balance-windows)
+  )
 
+(defun ym/org-ql-search--projects ()
+  (interactive)
+  (let ((buf-name "*Projects*"))
+    (if (get-buffer buf-name)
+        (switch-to-buffer buf-name)
+      (let ((org-agenda-files `("~/werk"
+                                ,@(directory-files-recursively "~/wo/veson.dev/content/blog" "\\.org$")
+                                ,@(directory-files-recursively "~/.setuplets" "\\.org$")
+                                )))
+        (org-ql-search (org-agenda-files) '(and (not (todo))
+                                                (tags "try" "read" "watch" "listen" "blog" "todo")
+                                                ;; (tags "git")
+                                                (not
+                                                 (tags "done" "canceled")
+                                                 )
+                                                ;; (tags "zoom_out")
+                                                ;; (ts-inactive)
+                                                )
+          :super-groups '((:auto-ts))
+          :buffer buf-name
+          ))))
+  ;; (delete-other-windows)
+  )
+
+(defun ym/org-ql-search--todos ()
+  (interactive)
+  (let ((buf-name "*Todos*"))
+    (if (get-buffer buf-name)
+        (switch-to-buffer buf-name)
+      (let ((org-agenda-files '("~/werk")))
+        (org-ql-search (org-agenda-files)
+          '(and
+            (todo)
+            (not (done))
+            (not (habit))
+            ;; (ts)
+            ;; (or
+            ;;  (deadline auto)
+            ;;  (scheduled :to today)
+            ;;  (ts-active :to today)
+            ;;  (ts-inactive :to today))
+            )
+          :super-groups '((:auto-ts))
+          :buffer buf-name
+          ))))
+  ;; (delete-other-windows)
   )
 
 (defun ym/list-drill-tags (query)
