@@ -11,4 +11,6 @@
 !/org-habits-monkey-patch.el
 !/maybe.el
 
-!/straight/versions/
+!straight/
+!straight/versions/
+!straight/versions/*
