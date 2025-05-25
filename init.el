@@ -2904,6 +2904,7 @@ Containing LEFT, and RIGHT aligned respectively."
 			          (org-agenda-overriding-header "")
 			          (org-agenda-todo-keyword-format "")
 			          (org-agenda-prefix-format "")
+                      (org-agenda-sorting-strategy '((agenda alpha-up)))
 			          ))
 	      (agenda "" (
 			          (org-agenda-files '("~/werk/Habits.org"))
@@ -2912,6 +2913,7 @@ Containing LEFT, and RIGHT aligned respectively."
 			          (org-agenda-overriding-header "")
 			          (org-agenda-todo-keyword-format "")
 			          (org-agenda-prefix-format "")
+                      (org-agenda-sorting-strategy '((agenda alpha-up)))
 			          ))
 	      (agenda "" (
 			          (org-agenda-files '("~/werk/Habits.org"))
@@ -2920,6 +2922,16 @@ Containing LEFT, and RIGHT aligned respectively."
 			          (org-agenda-overriding-header "")
 			          (org-agenda-todo-keyword-format "")
 			          (org-agenda-prefix-format "")
+                      (org-agenda-sorting-strategy '((agenda alpha-up)))
+			          ))
+	      (agenda "" (
+			          (org-agenda-files '("~/werk/Habits.org"))
+			          (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp ":MY_HABITS_GROUP: 4"))
+			          (org-agenda-span 1)
+			          (org-agenda-overriding-header "")
+			          (org-agenda-todo-keyword-format "")
+			          (org-agenda-prefix-format "")
+                      (org-agenda-sorting-strategy '((agenda alpha-up)))
 			          ))
 	      ))
 
