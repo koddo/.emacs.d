@@ -3007,6 +3007,49 @@ Containing LEFT, and RIGHT aligned respectively."
 
   )
 
+(defun ym/list-drill-tags (query)
+  (interactive)
+  (let* ((buf (get-buffer-create "*my-drill-tags*"))
+         (equal-including-properties (lambda (a b)
+                                       (and (equal a b)
+                                            (equal (text-properties-at 0 a) (text-properties-at 0 b)))))
+         (tags-occuring-along-with-drill-tag--including-drill
+          (sort
+           (cl-delete-duplicates
+            (apply #'append
+                   (org-map-entries (lambda () (org-get-tags))       ; (mapcar #'substring-no-properties (org-get-tags))
+                                    (concat "+drill" query) 'agenda))
+            :test
+            equal-including-properties
+            ;; #'equal
+            )))
+         (drill-tags (seq-difference
+                      tags-occuring-along-with-drill-tag--including-drill
+                      '(
+                        "drill"
+                        "try" "read"
+                        "done"
+                        ))))
+    (with-current-buffer buf
+      (view-mode -1)
+      (erase-buffer)
+      (unhighlight-regexp t)
+      (dolist (el drill-tags)
+        (insert (format "%s" el))
+        (when (get-text-property 0 'inherited el)
+          (insert " +"))
+        (insert "\n")
+        )
+      (switch-to-buffer buf)
+      (highlight-regexp "^.* \\+$")
+      (view-mode 1)
+      )))
+(comment
+ (ym/list-drill-tags "")
+ (ym/list-drill-tags "+python")
+ (ym/list-drill-tags "-python-english")
+ )
+
 
 
 
