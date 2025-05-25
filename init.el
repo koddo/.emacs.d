@@ -2726,40 +2726,51 @@ Containing LEFT, and RIGHT aligned respectively."
   (progn (org-agenda-goto)
          (next-line)
          (end-of-line))
-  (let ((timestamp-beginning-pos (re-search-backward org-ts-regexp-both (line-beginning-position) t)))
-	(if timestamp-beginning-pos
+  (let* ((timestamp-exists-p (save-excursion (re-search-backward org-ts-regexp-both (line-beginning-position) t)))
+         (jump-to-the-middle-of-the-timestamp (lambda ()    ; for convenience, because I like tweaking dates with shift+arrows, see https://orgmode.org/manual/Creating-Timestamps.html
+                                                (re-search-backward org-ts-regexp-both (line-beginning-position) t)
+                                                (forward-char 7))))         ; to the month pos in [2022-01-31 Mon], i.e., the "1" in "01"
+	(if timestamp-exists-p
         (progn
-	      (forward-char 7)      ; to the month pos, [2022-01-31 Mon]
-          (let ((prompt-for-new-timestamp-active-or-inactive (lambda ()
-                                                           (let* ((context (org-element-context))
-                                                                  (ts-type (when (memq (org-element-type context) '(timestamp timestamp-range))
-                                                                             (org-element-property :type context)))   ; = 'active or 'inactive
-                                                                  (scheduled (when (eq (org-element-type context) 'planning)
-                                                                               (org-element-property :scheduled context))))
-                                                             (cond
-                                                              ((eq ts-type 'active) (org-timestamp nil))
-                                                              ((eq ts-type 'inactive) (org-timestamp-inactive nil))
-                                                              (scheduled (org-schedule nil))
-                                                              (t (message "No timestamp at point"))
-                                                              )))))
+          (funcall jump-to-the-middle-of-the-timestamp)
+          (let ((prompt-for-new-timestamp-active-or-inactive
+                 (lambda ()
+                   (let* ((context (org-element-context))
+                          (ts-type (when (memq (org-element-type context) '(timestamp timestamp-range))
+                                     (org-element-property :type context)))   ; = 'active or 'inactive
+                          (scheduled (when (eq (org-element-type context) 'planning)
+                                       (org-element-property :scheduled context))))
+                     (cond
+                      ((eq ts-type 'active) (org-timestamp nil))
+                      ((eq ts-type 'inactive) (org-timestamp-inactive nil))
+                      (scheduled (org-schedule nil))
+                      (t (message "No timestamp at point")))))))
             (split-window-vertically)
             (let ((w (selected-window)))
               (other-window 1)
-              (unwind-protect
-                  (funcall prompt-for-new-timestamp-active-or-inactive)
-                (progn (delete-window)
-                       (select-window w))))
-	        ))
+              (let ((new-timestamp-has-been-set-p nil))
+                (unwind-protect
+                    (progn
+                      (funcall prompt-for-new-timestamp-active-or-inactive)
+                      (setq new-timestamp-has-been-set-p t))
+                  (progn (delete-window)
+                         (select-window w)
+                         (when new-timestamp-has-been-set-p
+                           (funcall jump-to-the-middle-of-the-timestamp))))))))
       (progn
         (beginning-of-line)
         (split-window-vertically)
-            (let ((w (selected-window)))
-              (other-window 1)
-              (unwind-protect
-                  (progn (org-timestamp-inactive nil)
-                         (newline))
-                (progn (delete-window)
-                       (select-window w))))))))
+        (let ((w (selected-window)))
+          (other-window 1)
+          (let ((new-timestamp-has-been-set-p nil))
+            (unwind-protect
+                (progn (org-timestamp-inactive nil)
+                       (save-excursion (newline))
+                       (setq new-timestamp-has-been-set-p t))
+              (progn (delete-window)
+                     (select-window w)
+                     (when new-timestamp-has-been-set-p
+                       (funcall jump-to-the-middle-of-the-timestamp))))))))))
 (defun ym/agenda-setup ()
   (local-set-key (kbd "t") 'ym/org-agenda-goto-timestamp))
 (add-hook 'org-agenda-mode-hook #'ym/agenda-setup)
