@@ -3102,6 +3102,21 @@ Containing LEFT, and RIGHT aligned respectively."
    :sort '(date))
  )
 
-
+(comment
+ ;; list all tags in my org files
+ (with-output-to-temp-buffer "*My org tags*"
+   (let ((tags (sort
+                (cl-delete-duplicates
+                 (apply #'append
+                        (org-map-entries (lambda () (mapcar #'substring-no-properties (org-get-tags)))
+                                         "+drill" 'agenda))
+                 :test
+                 #'equal
+                 ))))
+     (dolist (tag tags)
+       (princ (format "%s\n" tag))
+       )
+     ))
+ )
 
 
