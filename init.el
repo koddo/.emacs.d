@@ -55,6 +55,7 @@
 (setq initial-scratch-message
       ";; scratch buffer\n\n")
 (setq use-dialog-box nil)
+(context-menu-mode 1)
 
 (setq truncate-partial-width-windows nil)     ; I use visual-lines-mode instead
 
