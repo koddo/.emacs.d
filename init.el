@@ -77,17 +77,23 @@
 
 ;; =========================================================
 
-(defun display-buffer-same-or-next-window (buffer alist)     ; slightly modified definition of display-buffer-same-window
-  (if (not (or
-            (cdr (assq 'inhibit-same-window alist))      ; some functions like occur-mode-display-occurrence signal the request to show occurences in some other window using inhibit-same-window, and we abide below by choosing next window
-            ;; (window-dedicated-p)   ; TODO: make it skip all dedicated windows until it finds a free one
-	        (window-minibuffer-p)))
-      (window--display-buffer buffer (selected-window) 'reuse alist)
-    (window--display-buffer buffer (next-window) 'reuse alist)
-    ))
+(defun ym/display-buffer-next-window (buffer alist)
+  (window--display-buffer buffer (next-window) 'reuse alist))
+
+(defun ym/display-buffer-same-or-next-window (buffer alist)     ; slightly modified definition of display-buffer-same-window
+  (if (or
+	   (window-minibuffer-p)
+       (cdr (assq 'inhibit-same-window alist))      ; some functions like occur-mode-display-occurrence signal the request to show occurences in some other window using inhibit-same-window, and we abide below by choosing next window
+       )
+      (window--display-buffer buffer (next-window) 'reuse alist)
+    (window--display-buffer buffer (selected-window) 'reuse alist)))
+(comment
+ ;; M-x eval-expression this for debugging
+ (window-parameter (selected-window) 'inhibit-same-window)
+ )
 
 (setq display-buffer-alist
-      '((".*" (display-buffer-same-or-next-window))))
+      '((".*" (ym/display-buffer-same-or-next-window))))
 
 ;; for magit
 (setq transient-display-buffer-action   
@@ -1311,6 +1317,12 @@ there's a region, all lines that region covers will be duplicated."
             (replace-regexp "^\\(.+\\)$" "+-\\1-+" nil beg end))))))
 
   (require 'org-checklist)   ; for the reset_check_boxes property of repeated tasks
+
+  (defun ym/advice--org-agenda-goto--other-window (orig-fun &optional args)
+    (let ((display-buffer-alist `((".*" (,ym/display-buffer-next-window)))))
+      (apply orig-fun args)))
+  (advice-add 'org-agenda-goto :around 'ym/advice--org-agenda-goto--other-window)
+  ;; (advice-remove 'org-agenda-goto 'ym/advice--org-agenda-goto--other-window)
   )
 
 ;; why can't I do (require 'org-checklist) without this?
