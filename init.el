@@ -2740,7 +2740,7 @@ Containing LEFT, and RIGHT aligned respectively."
 (defun ym/org-agenda-goto-timestamp ()
   (interactive)
   (progn (org-agenda-goto)
-         (next-line)
+         (forward-line)
          (end-of-line))
   (let* ((timestamp-exists-p (save-excursion (re-search-backward org-ts-regexp-both (line-beginning-position) t)))
          (jump-to-the-middle-of-the-timestamp (lambda ()    ; for convenience, because I like tweaking dates with shift+arrows, see https://orgmode.org/manual/Creating-Timestamps.html
