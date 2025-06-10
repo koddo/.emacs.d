@@ -1304,10 +1304,10 @@ there's a region, all lines that region covers will be duplicated."
         )   ; open org links in the same window, by default it's find-file-other-window
 
   (setq org-log-into-drawer t      ; log both into :LOGBOOK:
-      org-clock-into-drawer t
-      org-log-repeat nil          ; disable :LAST_REPEAT:
-      setq org-log-reschedule nil
-      )
+        org-clock-into-drawer t
+        org-log-repeat nil          ; disable :LAST_REPEAT:
+        org-log-reschedule nil
+        )
 
   ;; (setq org-refile-targets '((org-agenda-files :maxlevel . 3)))    ; (setq org-refile-targets '(("~/werk" :maxlevel . 3)))
 
@@ -1328,8 +1328,9 @@ there's a region, all lines that region covers will be duplicated."
           (save-excursion
             (replace-regexp "^\\(.+\\)$" "+-\\1-+" nil beg end))))))
 
-  (require 'org-checklist)   ; for the reset_check_boxes property of repeated tasks
-
+  ;; (require 'org-checklist)   ; for the reset_check_boxes property of repeated tasks
+  (require 'org-habit)
+  
   (defun ym/advice--org-agenda-goto--other-window (orig-fun &optional args)
     (let ((display-buffer-alist `((".*" ,#'ym/display-buffer-next-window))))
       (apply orig-fun args)))
@@ -1338,10 +1339,17 @@ there's a region, all lines that region covers will be duplicated."
   )
 
 ;; why can't I do (require 'org-checklist) without this?
-(use-package org-contrib)
+(use-package org-contrib
+  :after org
+  )
 
-(use-package org-ql)
-(use-package org-super-agenda)
+(use-package org-ql
+  :after org
+  )
+
+(use-package org-super-agenda
+  :after org
+  )
 
 
 ;; =========================================================
@@ -1516,8 +1524,6 @@ there's a region, all lines that region covers will be duplicated."
   )
 
 ;; =========================================================
-
-(require 'org-habit)
 
 (setq org-habit-show-all-today t)
 (setq org-habit-show-habits t)
@@ -2118,30 +2124,44 @@ Containing LEFT, and RIGHT aligned respectively."
 ;; =========================================================
 
 (use-package ob-nix
-  :after org)
+  :after org
+  )
 
-(use-package ob-mermaid)
+(use-package ob-mermaid
+  :after org
+  )
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t)
-   (python . t)
-   (shell . t)
-   (sqlite . t)
-   (clojure . t)
-   (java . t)
-   (nix . t)
-   (mermaid . t)
-   ;; (javascript . t)
-   ;; (lisp . t)
-   ;; (haskell . t)
-   ;; (R . t)
-   ;; (sql . t)
-   ;; (typescript . t)     ; (use-package ob-typescript)
-   ;; (mongo . t)     ; (use-package ob-mongo)
-   ;; (jupyter . t)
-   ;; (http . t)    ; it's better to use curl in org blocks
-   ))
+(with-eval-after-load 'org
+  ;; (setq org-babel-sh-eoe-indicator "")                   ; Usually I don't want to capture results. When I need results, I set it in prologue in blocks.
+  ;; (setq org-babel-sh-eoe-output "org_babel_sh_eoe")      ; This is the default.
+  ;; (setq org-babel-sh-eoe-output "")      ; This is the default.
+  ;; (setq org-babel-sh-prompt ">>")
+  
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (shell . t)
+     (sqlite . t)
+     (clojure . t)
+     (java . t)
+     (nix . t)
+     (mermaid . t)
+     ;; (javascript . t)
+     ;; (lisp . t)
+     ;; (haskell . t)
+     ;; (R . t)
+     ;; (sql . t)
+     ;; (typescript . t)     ; (use-package ob-typescript)
+     ;; (mongo . t)     ; (use-package ob-mongo)
+     ;; (jupyter . t)
+     ;; (http . t)    ; it's better to use curl in org blocks
+     ))
+  )
+
+;; (setq org-babel-default-header-args
+;;       (cons '(:results . "replace")
+;;             (assq-delete-all :results org-babel-default-header-args)))
 
 ;; =========================================================
 
@@ -2511,9 +2531,11 @@ Containing LEFT, and RIGHT aligned respectively."
                     )    ; inherited by show-paren-match-expression
 
 ;; No configuration here. I just directly use functions from these packages without activating them.
-(use-package lispy)
-(use-package symex)
-(use-package puni)
+(with-eval-after-load 'org
+  (use-package lispy)
+  (use-package symex)
+  (use-package puni)
+  )
 
 ;; =========================================================
 
