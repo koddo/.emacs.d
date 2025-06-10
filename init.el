@@ -1164,8 +1164,10 @@ there's a region, all lines that region covers will be duplicated."
 	    (list (concat
 	           (file-name-as-directory user-emacs-directory)
 	           "yasnippets")))
+
+  ;; I use yas-insert-snippet manually using M-x yas-insert-snippet, make sure to turn on yas-minor-mode
+  (yas-global-mode -1)
   (yas-reload-all)
-  ;; I use yas-insert-snippet manually, glbal mode is disabled: (yas-global-mode -1)
 
   ;; unbind tab -- I use yas-insert-snippet, not expand
   ;; (define-key yas-minor-mode-map (kbd "<tab>") nil)
@@ -1200,7 +1202,9 @@ there's a region, all lines that region covers will be duplicated."
                             (list (expand-file-name (convert-standard-filename "my-yasnippets") user-emacs-directory))))
   )
 
-(use-package yasnippet-snippets)
+(use-package yasnippet-snippets
+  :after yasnippet
+  )
 
 ;; =========================================================
 
