@@ -102,7 +102,7 @@
 
 ;; for magit
 (setq transient-display-buffer-action   
-      '(display-buffer-same-or-next-window
+      '(ym/display-buffer-same-or-next-window
         (inhibit-same-window . t)))
 
 (setq switch-to-buffer-obey-display-actions t)
@@ -1331,7 +1331,7 @@ there's a region, all lines that region covers will be duplicated."
   (require 'org-checklist)   ; for the reset_check_boxes property of repeated tasks
 
   (defun ym/advice--org-agenda-goto--other-window (orig-fun &optional args)
-    (let ((display-buffer-alist `((".*" (,ym/display-buffer-next-window)))))
+    (let ((display-buffer-alist `((".*" ,#'ym/display-buffer-next-window))))
       (apply orig-fun args)))
   (advice-add 'org-agenda-goto :around 'ym/advice--org-agenda-goto--other-window)
   ;; (advice-remove 'org-agenda-goto 'ym/advice--org-agenda-goto--other-window)
