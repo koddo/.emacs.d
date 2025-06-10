@@ -33,6 +33,11 @@
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)   ; to avoid putting ":straight t" everywhere
 
+;; The easiest way to pin a version is directly edit .emacs.d.default/straight/versions/default.el after pull and freeze.
+;; Then M-x straight-thaw-versions.
+
+;; =========================================================
+
 (use-package blackout)     ; = diminish, see https://github.com/radian-software/blackout
 
 ;; =========================================================
